@@ -18,9 +18,10 @@ private:
     std::vector<Move> moves;
     
     bool bWhiteMove = true;
-    
-    bool generateValidMoves(Move);
-    Move makeMove(Move);
+
+    bool isMoveLegal(const Move&) const;
+    void generateValidMoves();
+    void makeMove(const Move&);
     void unmakeLastMove();
     
     void printEvenRow(int& i, int reversedBoard[]) const;

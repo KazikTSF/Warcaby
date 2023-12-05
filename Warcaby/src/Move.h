@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 enum Color
 {
     BLACK, WHITE, NONE
@@ -8,10 +10,13 @@ class Move
 private:
     unsigned startPos = -1;
     unsigned endPos = -1;
-    Color color = NONE;
+    int type = 0;
 public:
-    Move(int, int, Color);
+    Move(int, int, int);
+    
+    static Move parseMove(const std::string&, int type);
+    bool operator== (const Move&) const;
     unsigned getStartPos() const { return startPos; }
     unsigned getEndPos() const { return endPos; }
-    Color getColor() const { return color; }
+    int getType() const { return type; }
 };

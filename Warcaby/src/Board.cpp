@@ -16,7 +16,17 @@ Board::Board(const bool bUnicode) {
         board[i] = -1;
     printBoard();
 }
+bool Board::isMoveLegal(const Move& move) const {
+    if(std::find(moves.begin(), moves.end(), move) != moves.end())
+        return true;
+    return false;
+}
 
+void Board::makeMove(const Move& move) {
+    moves.push_back(move);
+    board[move.getStartPos()] = 0;
+    board[move.getEndPos()] = move.getType();
+}
 void Board::unmakeLastMove() {
     moves.erase(moves.end());
 }
