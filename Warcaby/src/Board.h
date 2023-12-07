@@ -18,13 +18,18 @@ private:
     std::vector<Move> moves;
     
     bool bWhiteMove = true;
-
+    
     bool isMoveLegal(const Move&) const;
-    void generateValidMoves();
+    std::vector<int> possibleDiagonals(int, bool) const;
+    void queenDiagonal(std::vector<int>& diagonals, int pos) const;
+    
+    std::vector<Move> findNormalMoves(int);
+    std::vector<Move> findJumps(int);
+    
     void makeMove(const Move&);
     void unmakeLastMove();
     
-    void printEvenRow(int& i, int reversedBoard[]) const;
-    void printOddRow(int& i, int[]) const;
+    void printEvenRow(int&, int[]) const;
+    void printOddRow(int&, int[]) const;
     void printBoard() const;
 };
