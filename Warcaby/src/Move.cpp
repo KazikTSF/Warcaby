@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-Move::Move(const int start, const int end, const int type, const MoveType mType) : startPos(start), endPos(end), pawnType(type), type(mType) {}
+Move::Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction) : startPos(start), endPos(end), pawnType(type), moveType(mType), moveDirection(direction) {}
 Move Move::parseMove(const std::string& move, int type) {
     int start, end;
     if(move.size() != 5)
@@ -15,8 +15,34 @@ Move Move::parseMove(const std::string& move, int type) {
         end = (move[3] - '0') + (8 - (move[4] - '0')) * 4;
     }
     if(abs(start-end)>5)
-        return {start, end, type, JUMP};
-    return {start, end, type, NORMAL};
+        return {start, end, type, MoveType::JUMP, MoveDirection::JUMP};
+    auto direction = MoveDirection::NONE;
+    bool row = (start/4) % 2; 
+    switch (start-end) {
+    case 3:
+        direction = MoveDirection::RIGHT;
+        break;
+    case -3:
+        direction = MoveDirection::LEFT;
+        break;
+    case 5:
+        direction = MoveDirection::RIGHT;
+        break;
+    case -5:
+        direction = MoveDirection::LEFT;
+        break;
+    case 4:
+    case -4:
+        if(row)
+            direction = MoveDirection::RIGHT;
+        else
+            direction = MoveDirection::LEFT;
+        break;
+    default:
+          throw std::invalid_argument("move");
+                
+    }
+    return {start, end, type, MoveType::NORMAL, direction};
 }
 
 bool Move::operator== (const Move& m) const{
