@@ -18,12 +18,12 @@ private:
     MoveType moveType = MoveType::NONE;
     MoveDirection moveDirection = MoveDirection::NONE;
 public:
-    Move(int, int, int, MoveType, MoveDirection);
+    Move(int start, int end, int type, MoveType mType, MoveDirection direction);
     
     static Move parseMove(const std::string&, int type);
     bool operator== (const Move&) const;
-    unsigned getStartPos() const { return startPos; }
-    unsigned getEndPos() const { return endPos; }
+    int getStartPos() const { return startPos; }
+    int getEndPos() const { return endPos; }
     int getPawnType() const { return pawnType; }
     MoveType getMoveType() const { return moveType; }
     MoveDirection getMoveDirection() const { return moveDirection; }

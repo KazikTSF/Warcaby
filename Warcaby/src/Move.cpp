@@ -17,7 +17,7 @@ Move Move::parseMove(const std::string& move, int type) {
     if(abs(start-end)>5)
         return {start, end, type, MoveType::JUMP, MoveDirection::JUMP};
     auto direction = MoveDirection::NONE;
-    bool row = (start/4) % 2; 
+    bool row = (start+1)/4 % 2; 
     switch (start-end) {
     case 3:
         direction = MoveDirection::RIGHT;

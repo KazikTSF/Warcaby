@@ -16,6 +16,7 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = -1;
+    board[10] = 2;
     printBoard();
 }
 bool Board::isMoveLegal(const Move& move) const {
@@ -31,7 +32,7 @@ void Board::generateMoves() {
         const bool bIsQueen = abs(piece)==2 ? true : false;
         if(piece == 0)
             continue;
-        if(piece == bWhiteMove) {
+        if(bWhiteMove ? piece > 0 : piece < 0) {
             auto jumps = findJumps(i, bIsQueen);
             if(!jumps.empty()) {
                 if(!bJumpsPossible)
@@ -63,22 +64,40 @@ void Board::unmakeLastMove() {
     moves.erase(moves.end());
     bWhiteMove = !bWhiteMove;
 }
-void Board::queenDiagonal(std::vector<Move>& diagonals, int pos) const {
-    for (auto move : diagonals) {
-        auto candidates = possibleDiagonals(move.getEndPos(), true);
-        for (auto candidate : candidates) {
-            if (candidate.getMoveDirection() == move.getMoveDirection()) {
-                diagonals.push_back(candidate);
+
+void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos) const {
+    size_t n = diagonalsInDirection.size();
+    for(unsigned i = 0; i < n; i++) {
+        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos());
+        for(Move move : candidates) {
+            if(move.getMoveDirection() == direction) {
+                n++;
+                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), move.getPawnType(), move.getMoveType(), move.getMoveDirection());
                 break;
             }
         }
     }
 }
-std::vector<Move> Board::possibleDiagonals(int pos, bool bQueen) const {
+
+std::vector<Move> Board::queenDiagonal(const std::vector<Move>& diagonals) const {
+    std::vector<Move> left;
+    std::vector<Move> right;
+    for(Move move : diagonals) {
+        if(move.getMoveDirection() == MoveDirection::LEFT)
+            left.push_back(move);
+        else if(move.getMoveDirection() == MoveDirection::RIGHT)
+            right.push_back(move);
+    }
+    findInDirection(left, MoveDirection::LEFT, left.at(0).getStartPos());
+    findInDirection(right, MoveDirection::RIGHT, right.at(0).getStartPos());
+    left.insert(left.end(), right.begin(), right.end());
+    return left;
+}
+std::vector<Move> Board::possibleDiagonals(int pos) const {
     std::vector<Move> diagonals;
     const int row=pos/4;
-    const bool bFirstColumn = pos%4==0 && pos%8 != 0;
-    const bool bLastColumn = pos%4==1 && pos%8 != 1;
+    const bool bFirstColumn = (pos+1)%4==0 && (pos+1)%8 != 0;
+    const bool bLastColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
     if(row % 2 == 0) {
         if(!bFirstColumn) {
             if(bWhiteMove)
@@ -103,16 +122,17 @@ std::vector<Move> Board::possibleDiagonals(int pos, bool bQueen) const {
         else
             diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
     }
-    if(bQueen)
-        queenDiagonal(diagonals, pos);
     return diagonals;
 }
-//TODO 12-17 nie jest legalnym ruchem
 std::vector<Move> Board::findNormalMoves(int pos, bool bIsQueen) const {
-    std::vector<Move> normalMoves = possibleDiagonals(pos, bIsQueen);
+    std::vector<Move> normalMoves = possibleDiagonals(pos);
+    if(bIsQueen)
+        normalMoves = queenDiagonal(normalMoves);
     for(Move move : normalMoves) {
         if(board[move.getEndPos()] != 0)
             normalMoves.erase(std::find(normalMoves.begin(), normalMoves.end(), move));
+        else if(bIsQueen)
+            break;
     }
     return normalMoves;
 }
@@ -186,6 +206,12 @@ void Board::printBoard() const {
 }
 
 void Board::printPossibleMoves() const {
-    for(Move move : moves)
-        printf("%d - %d\n", move.getStartPos()+1, move.getEndPos()+1);
+    for(unsigned i = 0; i < moves.size(); i++) {
+        Move move = moves.at(i);
+        if(i != 0) {
+            if(move.getStartPos() != moves.at(i-1).getStartPos())
+                std::cout << std::endl;
+        }
+        printf("%d - %d ", move.getStartPos()+1, move.getEndPos()+1);
+    }
 }

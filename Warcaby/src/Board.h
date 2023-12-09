@@ -24,15 +24,16 @@ private:
     
     bool bWhiteMove = true;
     
-    std::vector<Move> possibleDiagonals(int, bool) const;
-    void queenDiagonal(std::vector<Move>&, int) const;
+    std::vector<Move> possibleDiagonals(int pos) const;
+    std::vector<Move> queenDiagonal(const std::vector<Move>& startDiagonals) const;
     
-    std::vector<Move> findNormalMoves(int, bool) const;
-    std::vector<Move> findJumps(int, bool);
+    std::vector<Move> findNormalMoves(int pos, bool bIsQueen) const;
+    std::vector<Move> findJumps(int pos, bool bIsQueen);
     
-    void makeMove(const Move&);
+    void makeMove(const Move& move);
     void unmakeLastMove();
-    
-    void printEvenRow(int&, int[]) const;
-    void printOddRow(int&, int[]) const;
+    void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos) const;
+
+    void printEvenRow(int& i, int reversedBoard[]) const;
+    void printOddRow(int& i, int reversedBoard[]) const;
 };
