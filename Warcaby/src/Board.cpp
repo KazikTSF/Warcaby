@@ -11,12 +11,13 @@ Board::Board(const bool bUnicode) {
         blackQueen = 'B';
     }
     for(int i = 0; i < 12; i++)
-        board[i] = 1;
+        board[i] = -1;
     for(int i = 12; i < 20; i++)
         board[i] = 0;
     for(int i = 20; i < 32; i++)
-        board[i] = -1;
-    board[10] = 2;
+        board[i] = 1;
+    board[22] = 2;
+    
     printBoard();
 }
 bool Board::isMoveLegal(const Move& move) const {
@@ -30,6 +31,7 @@ void Board::generateMoves() {
     for(int i = 0; i < 32; i++) {
         const int piece = board[i];
         const bool bIsQueen = abs(piece)==2 ? true : false;
+        std::vector<Move> diagonals = possibleDiagonals(i);
         if(piece == 0)
             continue;
         if(bWhiteMove ? piece > 0 : piece < 0) {
@@ -41,8 +43,8 @@ void Board::generateMoves() {
                 moves.insert(moves.end(), jumps.begin(), jumps.end());
             }
             if(!bJumpsPossible) {
-                auto normal = findNormalMoves(i, bIsQueen);
-                moves.insert(moves.end(), normal.begin(), normal.end());
+                findNormalMoves(diagonals, bIsQueen);
+                moves.insert(moves.end(), diagonals.begin(), diagonals.end());
             }
             
         }
@@ -93,55 +95,68 @@ std::vector<Move> Board::queenDiagonal(const std::vector<Move>& diagonals) const
     left.insert(left.end(), right.begin(), right.end());
     return left;
 }
-std::vector<Move> Board::possibleDiagonals(int pos) const {
+std::vector<Move> Board::possibleDiagonals(const int pos) const {
     std::vector<Move> diagonals;
     const int row=pos/4;
-    const bool bFirstColumn = (pos+1)%4==0 && (pos+1)%8 != 0;
-    const bool bLastColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
-    if(row % 2 == 0) {
+    const bool bLastColumn = (pos+1)%4==0 && (pos+1)%8 != 0;
+    const bool bFirstColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
+    if(row % 2 == 1) {
         if(!bFirstColumn) {
             if(bWhiteMove)
-                diagonals.emplace_back(pos, pos+5, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+                diagonals.emplace_back(pos, pos-5, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
             else
-                diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+                diagonals.emplace_back(pos, pos+3, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
         }
         if(bWhiteMove)
-            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+            diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
         else
-            diagonals.emplace_back(pos, pos-3, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
     }
     else {
         if(!bLastColumn) {
             if(bWhiteMove)
-                diagonals.emplace_back(pos, pos+3, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+                diagonals.emplace_back(pos, pos-3, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
             else
-                diagonals.emplace_back(pos, pos-5, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+                diagonals.emplace_back(pos, pos+5, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
         }
         if(bWhiteMove)
-            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
-        else
             diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+        else
+            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
     }
     return diagonals;
 }
-std::vector<Move> Board::findNormalMoves(int pos, bool bIsQueen) const {
-    std::vector<Move> normalMoves = possibleDiagonals(pos);
+//TODO zły typ pionka w ruchach damki
+//TODO zle sprawdza czy ruch damki jest zakonczony, trzeba rozbic na lewo i prawo
+void Board::findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const {
     if(bIsQueen)
-        normalMoves = queenDiagonal(normalMoves);
-    for(Move move : normalMoves) {
-        if(board[move.getEndPos()] != 0)
-            normalMoves.erase(std::find(normalMoves.begin(), normalMoves.end(), move));
-        else if(bIsQueen)
-            break;
+        diagonals = queenDiagonal(diagonals);
+    bool bEndQueenMove = false;
+    size_t n = diagonals.size();
+    for(unsigned i = 0; i < n; i++) {
+        Move move = diagonals.at(i);
+        const auto index = std::find(diagonals.begin(), diagonals.end(), move);
+        if(bIsQueen && bEndQueenMove) {
+            diagonals.erase(index);
+            n=diagonals.size();
+            i--;
+            continue;
+        }
+        if(board[move.getEndPos()] != 0) {
+            diagonals.erase(index);
+            n=diagonals.size();
+            if(bIsQueen)
+                bEndQueenMove = true;
+            i--;
+        }
     }
-    return normalMoves;
 }
 
-void Board::printEvenRow(int& i, int reversedBoard[]) const {
+void Board::printEvenRow(int& i) const {
     std::cout << 8-(i+1)/4 << " ";
     for(int j = 0; j < 4; j++) {
         std::cout << "| ";
-        switch (reversedBoard[++i]) {
+        switch (board[++i]) {
         case 0:
             std::cout << "  |   ";
             break;
@@ -164,11 +179,11 @@ void Board::printEvenRow(int& i, int reversedBoard[]) const {
     std::cout << "|";
 }
 
-void Board::printOddRow(int& i, int reversedBoard[]) const {
+void Board::printOddRow(int& i) const {
     std::cout << 8-(i+1)/4 << " |   ";
     for(int j = 0; j < 4; j++) {
         std::cout << "| ";
-        switch (reversedBoard[++i]) {
+        switch (board[++i]) {
         case 0:
             std::cout << "  |   ";
             break;
@@ -191,15 +206,12 @@ void Board::printOddRow(int& i, int reversedBoard[]) const {
 }
 void Board::printBoard() const {
     const std::string lineSeparator = "  +---+---+---+---+---+---+---+---+";
-    int temp[32];
-    for(int i = 0; i < 32; i++)
-        temp[i] = board[31-i];
     std::cout << lineSeparator << std::endl;
     for(int i = -1; i < 28;) {
         if((8-(i+1)/4) % 2 == 1)
-            printEvenRow(i, temp);
+            printEvenRow(i);
         else
-            printOddRow(i, temp);
+            printOddRow(i);
         std::cout << std::endl << lineSeparator << std::endl;
     }
     std::cout << "    a   b   c   d   e   f   g   h" << std::endl;
@@ -212,6 +224,6 @@ void Board::printPossibleMoves() const {
             if(move.getStartPos() != moves.at(i-1).getStartPos())
                 std::cout << std::endl;
         }
-        printf("%d - %d ", move.getStartPos()+1, move.getEndPos()+1);
+        printf("%d - %d;  ", move.getStartPos()+1, move.getEndPos()+1);
     }
 }
