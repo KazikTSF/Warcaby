@@ -16,13 +16,16 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
-    board[22] = 2;
+    board[18] = -2;
     
     printBoard();
 }
 bool Board::isMoveLegal(const Move& move) const {
-    if(std::find(moves.begin(), moves.end(), move) != moves.end())
-        return true;
+    for(const MoveHistory& m : moves) {
+        Move temp = m.move;
+        if(temp == move)
+            return true;
+    }
     return false;
 }
 
@@ -31,50 +34,106 @@ void Board::generateMoves() {
     for(int i = 0; i < 32; i++) {
         const int piece = board[i];
         const bool bIsQueen = abs(piece)==2 ? true : false;
-        std::vector<Move> diagonals = possibleDiagonals(i);
         if(piece == 0)
             continue;
         if(bWhiteMove ? piece > 0 : piece < 0) {
-            auto jumps = findJumps(i, bIsQueen);
+            auto jumpsT = findJumps(i, board[i]);
+            std::vector<MoveHistory> jumps;
+            jumps.reserve(jumpsT.size());
+            for(Move m : jumpsT) {
+                jumps.emplace_back(m, std::vector<int>());
+            }
             if(!jumps.empty()) {
                 if(!bJumpsPossible)
                     moves.clear();
                 bJumpsPossible = true;
-                moves.insert(moves.end(), jumps.begin(), jumps.end());
+                for(auto j : jumps)
+                    moves.push_back(j);
             }
             if(!bJumpsPossible) {
+                std::vector<Move> diagonals = possibleDiagonals(i, piece, false);
                 findNormalMoves(diagonals, bIsQueen);
-                moves.insert(moves.end(), diagonals.begin(), diagonals.end());
+                for(auto j : jumps)
+                    moves.push_back(j);
             }
             
         }
     }
 }
 
-std::vector<Move> Board::findJumps(int pos, bool bIsQueen) {
+std::vector<Move> Board::findJumps(int pos, int pawnType) {
     std::vector<Move> jumps;
+    std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
+    for(Move m : diagonals) {
+        if(bWhiteMove ? board[m.getEndPos()] < 0 : board[m.getEndPos()] > 0) {
+            std::vector<Move> candidates = possibleDiagonalsBoth(m.getEndPos(), pawnType);
+            int n = candidates.size();
+            for(int i = 0; i < n; i++) {
+                Move c = candidates.at(i);
+                const bool bBothUp = c.getEndPos()-c.getStartPos() < 0 && m.getEndPos()-m.getStartPos() < 0 ? true : false;
+                const bool bBothDown = c.getEndPos()-c.getStartPos() > 0 && m.getEndPos()-m.getStartPos() > 0 ? true : false; 
+                if(!(bBothDown || bBothUp) || c.getMoveDirection() != m.getMoveDirection()) {
+                    candidates.erase(std::find(candidates.begin(), candidates.end(), c));
+                    n = candidates.size();
+                    i--;
+                }
+                
+            }
+            if(candidates.empty())
+                continue;
+            if (board[candidates.at(0).getEndPos()] == 0) { //kandydat moze byc tylko jeden
+                jumps.emplace_back(m.getStartPos(), candidates.at(0).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP);
+                jumps.at(jumps.size()-1).addCaptured(m.getEndPos());
+            }
+        }
+    }
+    if(jumps.empty())
+        return {};
+    for(Move jump : jumps) {
+        makeMove(jump);
+        printBoard();
+        bWhiteMove = !bWhiteMove;
+        findJumps(jump.getEndPos(), pawnType);
+        unmakeLastMove();
+        bWhiteMove = !bWhiteMove;
+    }
     return jumps;
 }
 
 void Board::makeMove(const Move& move) {
-    moves.push_back(move);
+    
+    std::vector<int> capturedPawns;
     board[move.getStartPos()] = 0;
+    if(move.getMoveType() == MoveType::JUMP) {
+        for(const int captured : move.getCapturedPositions()) {
+            capturedPawns.push_back(board[captured]);
+            board[captured] = 0;
+        }
+    }
     board[move.getEndPos()] = move.getPawnType();
     bWhiteMove = !bWhiteMove;
+    const MoveHistory history = {move, capturedPawns};
+    moves.push_back(history);
 }
 void Board::unmakeLastMove() {
-    moves.erase(moves.end());
+    const MoveHistory lastMove = moves.at(moves.size()-1);
+    moves.erase(moves.end()-1);
+    for(int i = 0 ; i < lastMove.capturedPawns.size(); i++) {
+        board[lastMove.move.getCapturedPositions().at(i)] = lastMove.capturedPawns.at(i);
+    }
+    board[lastMove.move.getStartPos()] = lastMove.move.getPawnType();
+    board[lastMove.move.getEndPos()] = 0;
     bWhiteMove = !bWhiteMove;
 }
 
-void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos) const {
+void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType) const {
     size_t n = diagonalsInDirection.size();
     for(int i = 0; i < n; i++) {
-        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos());
+        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos(), pawnType, false);
         for(Move move : candidates) {
             if(move.getMoveDirection() == direction) {
                 n++;
-                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), bWhiteMove ? 2 : -2, move.getMoveType(), move.getMoveDirection());
+                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), pawnType, move.getMoveType(), move.getMoveDirection());
                 break;
             }
         }
@@ -90,43 +149,42 @@ std::vector<Move> Board::queenDiagonal(const std::vector<Move>& diagonals) const
         else if(move.getMoveDirection() == MoveDirection::RIGHT)
             right.push_back(move);
     }
-    findInDirection(left, MoveDirection::LEFT, left.at(0).getStartPos());
-    findInDirection(right, MoveDirection::RIGHT, right.at(0).getStartPos());
+    findInDirection(left, MoveDirection::LEFT, left.at(0).getStartPos(), bWhiteMove ? 2 : -2);
+    findInDirection(right, MoveDirection::RIGHT, right.at(0).getStartPos(), bWhiteMove ? 2 : -2);
     left.insert(left.end(), right.begin(), right.end());
     return left;
 }
-std::vector<Move> Board::possibleDiagonals(const int pos) const {
+std::vector<Move> Board::possibleDiagonals(const int pos, const int pawnType, const bool reversed) const {
     std::vector<Move> diagonals;
     const int row=pos/4;
     const bool bLastColumn = (pos+1)%4==0 && (pos+1)%8 != 0;
     const bool bFirstColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
     if(row % 2 == 1) {
         if(!bFirstColumn) {
-            if(bWhiteMove)
-                diagonals.emplace_back(pos, pos-5, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+            if(bWhiteMove && !reversed)
+                diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
             else
-                diagonals.emplace_back(pos, pos+3, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+                diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
         }
-        if(bWhiteMove)
-            diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+        if(bWhiteMove && !reversed)
+            diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
         else
-            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+            diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
     }
     else {
         if(!bLastColumn) {
-            if(bWhiteMove)
-                diagonals.emplace_back(pos, pos-3, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+            if(bWhiteMove && !reversed)
+                diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
             else
-                diagonals.emplace_back(pos, pos+5, board[pos], MoveType::NORMAL, MoveDirection::RIGHT);
+                diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
         }
-        if(bWhiteMove)
-            diagonals.emplace_back(pos, pos-4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+        if(bWhiteMove && !reversed)
+            diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
         else
-            diagonals.emplace_back(pos, pos+4, board[pos], MoveType::NORMAL, MoveDirection::LEFT);
+            diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
     }
     return diagonals;
 }
-//TODO zly typ pionka w ruchach damki
 void Board::findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const {
     if(bIsQueen) {
         diagonals = queenDiagonal(diagonals);
@@ -182,6 +240,13 @@ void Board::findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const {
             }
         }
     }
+}
+
+std::vector<Move> Board::possibleDiagonalsBoth(int pos, int pawnType) const {
+    std::vector<Move> temp1 = possibleDiagonals(pos, pawnType, false);
+    std::vector<Move> temp2 = possibleDiagonals(pos, pawnType, true);
+    temp1.insert(temp1.end(), temp2.begin(), temp2.end());
+    return temp1;
 }
 
 void Board::printEvenRow(int& i) const {
@@ -251,11 +316,14 @@ void Board::printBoard() const {
 
 void Board::printPossibleMoves() const {
     for(int i = 0; i < moves.size(); i++) {
-        Move move = moves.at(i);
+        Move move = moves.at(i).move;
         if(i != 0) {
-            if(move.getStartPos() != moves.at(i-1).getStartPos())
+            if(move.getStartPos() != moves.at(i-1).move.getStartPos())
                 std::cout << std::endl;
         }
         printf("%d - %d;  ", move.getStartPos()+1, move.getEndPos()+1);
     }
 }
+
+
+

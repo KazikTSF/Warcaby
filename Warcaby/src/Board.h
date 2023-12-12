@@ -14,25 +14,31 @@ public:
     void printBoard() const;
     void printPossibleMoves() const;
 private:
+    struct MoveHistory {
+        Move move;
+        std::vector<int> capturedPawns;
+        MoveHistory(const Move& m, const std::vector<int>& c) : move(m), capturedPawns(c) {}
+    };
     std::string whitePawn = "\xE2\x9B\x82";
     std::string whiteQueen = "\xE2\x9B\x83";
     std::string blackPawn = "\xE2\x9B\x80";
     std::string blackQueen = "\xE2\x9B\x81";
     
     int* board = new int[32];
-    std::vector<Move> moves;
+    std::vector<MoveHistory> moves;
     
     bool bWhiteMove = true;
     
-    std::vector<Move> possibleDiagonals(int pos) const;
+    std::vector<Move> possibleDiagonals(const int pos, const int pawnType, const bool reversed) const;
     std::vector<Move> queenDiagonal(const std::vector<Move>& startDiagonals) const;
 
     void findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const;
-    std::vector<Move> findJumps(int pos, bool bIsQueen);
+    std::vector<Move> possibleDiagonalsBoth(int pos, int pawnType) const;
+    std::vector<Move> findJumps(int pos, int pawnType);
     
     void makeMove(const Move& move);
     void unmakeLastMove();
-    void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos) const;
+    void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType) const;
 
     void printEvenRow(int& i) const;
     void printOddRow(int& i) const;
