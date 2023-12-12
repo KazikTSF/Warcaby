@@ -11,7 +11,6 @@ public:
     
     bool isMoveLegal(const Move&) const;
     void generateMoves();
-
     void printBoard() const;
     void printPossibleMoves() const;
 private:
@@ -25,13 +24,11 @@ private:
     
     bool bWhiteMove = true;
     
-    std::vector<Move> possibleDiagonals(const int pos, const bool reverse) const;
+    std::vector<Move> possibleDiagonals(int pos) const;
     std::vector<Move> queenDiagonal(const std::vector<Move>& startDiagonals) const;
-    std::vector<Move> possibleDiagonalsBoth(int pos) const;
 
     void findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const;
-
-    void findJumps(int pos, int pawnType, std::vector<Move>& jumps) const;
+    std::vector<Move> findJumps(int pos, bool bIsQueen);
     
     void makeMove(const Move& move);
     void unmakeLastMove();

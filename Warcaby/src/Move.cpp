@@ -2,15 +2,7 @@
 
 #include <stdexcept>
 
-Move::Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction) :
-    startPos(start), endPos(end), pawnType(type), moveType(mType), moveDirection(direction) {}
-
-Move::Move(int start, int end, int type, MoveType mType, MoveDirection direction, int captured) :
-     startPos(start), endPos(end), pawnType(type), moveType(mType), 
-     moveDirection(direction) {
-    capturedPositions.push_back(captured);
-}
-
+Move::Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction) : startPos(start), endPos(end), pawnType(type), moveType(mType), moveDirection(direction) {}
 Move Move::parseMove(const std::string& move, int type) {
     int start, end;
     if(move.size() != 5)
@@ -24,8 +16,8 @@ Move Move::parseMove(const std::string& move, int type) {
     }
     if(abs(start-end)>5)
         return {start, end, type, MoveType::JUMP, MoveDirection::JUMP};
-    const bool row = start/4 % 2 == 1;
-    MoveDirection direction;
+    auto direction = MoveDirection::NONE;
+    bool row = start/4 % 2 == 1; 
     switch (start-end) {
     case 3:
     case -5:
