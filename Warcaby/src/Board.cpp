@@ -69,12 +69,12 @@ void Board::unmakeLastMove() {
 
 void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos) const {
     size_t n = diagonalsInDirection.size();
-    for(int i = 0; i < n; i++) {
-        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos());
-        for(Move move : candidates) {
+    for(unsigned i = 0; i < n; i++) {
+        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos(), false);
+        for(const Move& move : candidates) {
             if(move.getMoveDirection() == direction) {
                 n++;
-                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), bWhiteMove ? 2 : -2, move.getMoveType(), move.getMoveDirection());
+                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), move.getPawnType(), move.getMoveType(), move.getMoveDirection());
                 break;
             }
         }
@@ -126,60 +126,28 @@ std::vector<Move> Board::possibleDiagonals(const int pos) const {
     }
     return diagonals;
 }
-//TODO zly typ pionka w ruchach damki
+//TODO zły typ pionka w ruchach damki
+//TODO zle sprawdza czy ruch damki jest zakonczony, trzeba rozbic na lewo i prawo
 void Board::findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const {
-    if(bIsQueen) {
+    if(bIsQueen)
         diagonals = queenDiagonal(diagonals);
-        bool bEndQueenMoveLeft = false, bEndQueenMoveRight = false;;
-        int startRight = 0;
-        for(int i = 0; i < diagonals.size(); i++) {
-            if(diagonals.at(i).getMoveDirection() == MoveDirection::RIGHT) {
-                startRight = i;
-                break;
-            }
+    bool bEndQueenMove = false;
+    size_t n = diagonals.size();
+    for(unsigned i = 0; i < n; i++) {
+        Move move = diagonals.at(i);
+        const auto index = std::find(diagonals.begin(), diagonals.end(), move);
+        if(bIsQueen && bEndQueenMove) {
+            diagonals.erase(index);
+            n=diagonals.size();
+            i--;
+            continue;
         }
-        for(int i = 0; i < diagonals.size(); i++) {
-            Move move = diagonals.at(i);
-            if(i < startRight) {
-                if(bEndQueenMoveLeft) {
-                    diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
-                    i--;
-                    startRight--;
-                    continue;
-                }
-                if(board[move.getEndPos()] != 0) {
-                    bEndQueenMoveLeft = true;
-                    diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
-                    i--;
-                    startRight--;
-                }
-            }
-            else {
-                if(bEndQueenMoveRight) {
-                    diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
-                    i--;
-                    startRight--;
-                    continue;
-                }
-                if(board[move.getEndPos()] != 0) {
-                    bEndQueenMoveRight = true;
-                    diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
-                    i--;
-                    startRight--;
-                }
-            }
-        }
-    }
-    else {
-        auto n = diagonals.size();
-        for(int i = 0; i < n; i++) {
-            Move move = diagonals.at(i);
-            const auto index = std::find(diagonals.begin(), diagonals.end(), move);
-            if(board[move.getEndPos()] != 0) {
-                diagonals.erase(index);
-                n=diagonals.size();
-                i--;
-            }
+        if(board[move.getEndPos()] != 0) {
+            diagonals.erase(index);
+            n=diagonals.size();
+            if(bIsQueen)
+                bEndQueenMove = true;
+            i--;
         }
     }
 }
@@ -250,7 +218,7 @@ void Board::printBoard() const {
 }
 
 void Board::printPossibleMoves() const {
-    for(int i = 0; i < moves.size(); i++) {
+    for(unsigned i = 0; i < moves.size(); i++) {
         Move move = moves.at(i);
         if(i != 0) {
             if(move.getStartPos() != moves.at(i-1).getStartPos())
