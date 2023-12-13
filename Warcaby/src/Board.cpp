@@ -17,10 +17,12 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
-    board[18] = -2;
-    board[5] = 0;
-    board[7] = 0;
-    board[12] = -1;
+    //test bicia damki
+    // board[18] = -2;
+    // board[10] = 0;
+    // board[3] = 0;
+    // board[12] = -1;
+    board[13] = 2;
     printBoard();
 }
 bool Board::isMoveLegal(const Move& move) const {
@@ -37,7 +39,7 @@ void Board::generateMoves() {
         if(piece == 0)
             continue;
         if(bWhiteMove ? piece > 0 : piece < 0) {
-            auto jumpsT = findJumps(i, board[i], {});
+            auto jumpsT = findPawnJumps(i, board[i], {});
             std::vector<Move> jumps;
             jumps.reserve(jumpsT.size());
             for(const Move& m : jumpsT)
@@ -68,10 +70,10 @@ void Board::generateMoves() {
             possibleMoves.emplace_back(m);
     }
 }
-std::vector<Move> Board::findJumps(int pos, int pawnType, std::vector<int> captured) { //captured nie przewiduje sytuacji w ktorej f zwraca wicej niz 1 skok
+std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> captured) {
     std::vector<Move> jumps;
-    int jumpsCounter = 0; //licznik na wypadek gdyby funkcja zwrocila wiecej niz jeden skok z pozycji
     const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
+    int counterCaptured = 0;
     for(const Move& m : diagonals) {
         if(bWhiteMove ? board[m.getEndPos()] < 0 : board[m.getEndPos()] > 0) {
             std::vector<Move> candidates = possibleDiagonalsBoth(m.getEndPos(), pawnType);
@@ -93,21 +95,173 @@ std::vector<Move> Board::findJumps(int pos, int pawnType, std::vector<int> captu
                 jumps.emplace_back(m.getStartPos(), candidates.at(0).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP);
                 jumps.at(jumps.size()-1).addCaptured(captured);
                 jumps.at(jumps.size()-1).addCaptured(m.getEndPos());
-                captured = jumps.at(jumps.size()-1).getCapturedPositions();
-                jumpsCounter++;
+                auto temp = jumps.at(jumps.size()-1).getCapturedPositions();
+                for(const int i : temp) {
+                    if(std::find(captured.begin(), captured.end(), i) == captured.end())
+                        captured.push_back(i);
+                }
+                counterCaptured++;
             }
         }
     }
     if(jumps.empty())
         return {};
     std::vector<Move> temp;
-    for(const Move& jump : jumps) {
-        makeMove(jump);
+    int i = 0;
+    for(int i = 0; i < jumps.size(); i++) {;
+        makeMove(jumps.at(i));
         bWhiteMove = !bWhiteMove;
-        std::vector<Move> nextJumps = findJumps(jump.getEndPos(), pawnType, captured);
+        int savedCaptured;
+        std::vector<int>::const_iterator savedIterator = captured.end()-1;
+        if(counterCaptured == 2) {
+            if(i == jumps.size()-2) {
+                savedCaptured = *savedIterator;
+                captured.erase(savedIterator);
+                savedIterator = captured.end();
+            }
+            else if(i == jumps.size()-1) {
+                savedCaptured = *(savedIterator-1);
+                captured.erase(savedIterator-1);
+                savedIterator = captured.end()-1;
+            }
+        }
+        else if(counterCaptured == 3) {
+            if(i == jumps.size()-3) {
+                savedCaptured = *savedIterator;
+                captured.erase(savedIterator);
+                savedIterator = captured.end();
+                
+            }
+            else if(i == jumps.size()-2) {
+                savedCaptured = *(savedIterator-1);
+                captured.erase(savedIterator-1);
+                savedIterator = captured.end()-1;
+            }
+            else if(i == jumps.size()-1) {
+                savedCaptured = *(savedIterator-2);
+                captured.erase(savedIterator-2);
+                savedIterator = captured.end()-2;
+            }
+        }
+        else if(counterCaptured == 4) {
+            if(i == jumps.size()-4) {
+                savedCaptured = *savedIterator;
+                captured.erase(savedIterator);
+                savedIterator = captured.end();
+                
+            }
+            else if(i == jumps.size()-3) {
+                savedCaptured = *(savedIterator-1);
+                captured.erase(savedIterator-1);
+                savedIterator = captured.end()-1;
+            }
+            else if(i == jumps.size()-2) {
+                savedCaptured = *(savedIterator-2);
+                captured.erase(savedIterator-2);
+                savedIterator = captured.end()-2;
+            }
+            else if(i == jumps.size()-1) {
+                savedCaptured = *(savedIterator-3);
+                captured.erase(savedIterator-3);
+                savedIterator = captured.end()-3;
+            }
+        }
+        jumps.at(i) = *new Move(jumps.at(i).getEndPos(), jumps.at(i).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);
+        std::vector<Move> nextJumps = findPawnJumps(jumps.at(i).getEndPos(), pawnType, captured);
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
         unmakeLastMove();   
         bWhiteMove = !bWhiteMove;
+        if(counterCaptured > 1) {
+            captured.insert(savedIterator, savedCaptured);
+        }
+    }
+    jumps.insert(jumps.end(), temp.begin(), temp.end());
+    for(Move& move : jumps) {
+        move = *new Move(pos, move.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, move.getCapturedPositions());
+    }
+    return jumps;
+}
+std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> captured) {
+    std::vector<Move> jumps;
+    const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
+    int counterCaptured = 0;
+    for(const Move& m : diagonals) {
+        if(bWhiteMove ? board[m.getEndPos()] < 0 : board[m.getEndPos()] > 0) {
+            std::vector<Move> candidates = possibleDiagonalsBoth(m.getEndPos(), pawnType);
+            int n = candidates.size();
+            for(int i = 0; i < n; i++) {
+                Move c = candidates.at(i);
+                const bool bBothUp = c.getEndPos()-c.getStartPos() < 0 && m.getEndPos()-m.getStartPos() < 0 ? true : false;
+                const bool bBothDown = c.getEndPos()-c.getStartPos() > 0 && m.getEndPos()-m.getStartPos() > 0 ? true : false; 
+                if(!(bBothDown || bBothUp) || c.getMoveDirection() != m.getMoveDirection()) {
+                    candidates.erase(std::find(candidates.begin(), candidates.end(), c));
+                    n = candidates.size();
+                    i--;
+                }
+                
+            }
+            if(candidates.empty())
+                continue;
+            if (board[candidates.at(0).getEndPos()] == 0) { //kandydat moze byc tylko jeden
+                jumps.emplace_back(m.getStartPos(), candidates.at(0).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP);
+                jumps.at(jumps.size()-1).addCaptured(captured);
+                jumps.at(jumps.size()-1).addCaptured(m.getEndPos());
+                auto temp = jumps.at(jumps.size()-1).getCapturedPositions();
+                for(const int i : temp) {
+                    if(std::find(captured.begin(), captured.end(), i) == captured.end())
+                        captured.push_back(i);
+                }
+                counterCaptured++;
+            }
+        }
+    }
+    if(jumps.empty())
+        return {};
+    std::vector<Move> temp;
+    int i = 0;
+    for(int i = 0; i < jumps.size(); i++) {;
+        makeMove(jumps.at(i));
+        bWhiteMove = !bWhiteMove;
+        int savedCaptured;
+        std::vector<int>::const_iterator savedIterator = captured.end()-1;
+        if(counterCaptured == 2) {
+            if(i == jumps.size()-2) {
+                savedCaptured = *savedIterator;
+                captured.erase(savedIterator);
+                savedIterator = captured.end();
+            }
+            else if(i == jumps.size()-1) {
+                savedCaptured = *(savedIterator-1);
+                captured.erase(savedIterator-1);
+                savedIterator = captured.end()-1;
+            }
+        }
+        else if(counterCaptured == 3) {
+            if(i == jumps.size()-3) {
+                savedCaptured = *savedIterator;
+                captured.erase(savedIterator);
+                savedIterator = captured.end();
+                
+            }
+            else if(i == jumps.size()-2) {
+                savedCaptured = *(savedIterator-1);
+                captured.erase(savedIterator-1);
+                savedIterator = captured.end()-1;
+            }
+            else if(i == jumps.size()-1) {
+                savedCaptured = *(savedIterator-2);
+                captured.erase(savedIterator-2);
+                savedIterator = captured.end()-2;
+            }
+        }
+        jumps.at(i) = *new Move(jumps.at(i).getEndPos(), jumps.at(i).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);
+        std::vector<Move> nextJumps = findPawnJumps(jumps.at(i).getEndPos(), pawnType, captured);
+        temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
+        unmakeLastMove();   
+        bWhiteMove = !bWhiteMove;
+        if(counterCaptured > 1) {
+            captured.insert(savedIterator, savedCaptured);
+        }
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
     for(Move& move : jumps) {
@@ -157,7 +311,7 @@ void Board::unmakeLastMove() {
     bWhiteMove = !bWhiteMove;
 }
 
-void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType) const {
+void Board::findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType) const {//damka sie nie porusza do tylu
     size_t n = diagonalsInDirection.size();
     for(int i = 0; i < n; i++) {
         auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos(), pawnType, false);

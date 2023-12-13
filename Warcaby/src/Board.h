@@ -11,6 +11,7 @@ public:
     
     bool isMoveLegal(const Move&) const;
     void generateMoves();
+    std::vector<Move> findQueenJumps(int pos, int pawnType, std::vector<int> captured);
     void printBoard() const;
     void printPossibleMoves() const;
 private:
@@ -34,7 +35,7 @@ private:
 
     void findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const;
     std::vector<Move> possibleDiagonalsBoth(int pos, int pawnType) const;
-    std::vector<Move> findJumps(int pos, int pawnType, std::vector<int> captured);
+    std::vector<Move> findPawnJumps(int pos, int pawnType, std::vector<int> captured);
     static std::vector<Move> findLongestJumps(const std::vector<Move>& jumps);
     void makeMove(const Move& move);
     void unmakeLastMove();
