@@ -12,7 +12,7 @@ int main()
     // do {
     //     std::cin >> choice;
     // } while(choice != 't' && choice != 'n');
-    std::cout << "ruchy mozna zapisywac w notacji szachowej (c3-d4), albo warcabowej(11-14)" << std::endl;
+    std::cout << "Ruchy mozna zapisywac w notacji szachowej (c3-d4), albo warcabowej(11-14)" << std::endl;
     if(choice == 't')
         Game(true);
     else

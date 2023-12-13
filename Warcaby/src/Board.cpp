@@ -74,23 +74,22 @@ void Board::generateMoves() {
             possibleMoves.emplace_back(m);
     }
 }
-std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> captured) {
-    std::vector<Move> jumps;
-    std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
-    int startReversed = queenDiagonal(diagonals), startRight = -1, counterCaptured = 0, capturedPosInOneDiagonal = -1;
+std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> captured) { //kto to pisal, czas na lekcje DRY
+    std::vector<Move> jumps = possibleDiagonalsBoth(pos, pawnType);
+    int startReversed = queenDiagonal(jumps), startRight = -1, counterCaptured = 0, capturedPosInOneDiagonal = -1;
     for(int i = 0; i < startReversed; i++) {
-        if(diagonals[i].getMoveDirection() == MoveDirection::RIGHT) {
+        if(jumps[i].getMoveDirection() == MoveDirection::RIGHT) {
             startRight = i;
             break;
         }
     }
     bool endDiagonal = false;
     for(int i = 0; i < startRight; i++) {
-        const Move move = diagonals.at(i);
+        const Move move = jumps.at(i);
         if(capturedPosInOneDiagonal != -1)
-            diagonals.at(i).addCaptured(capturedPosInOneDiagonal);
+            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
         if(endDiagonal) {
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
             i--;
             startRight--;
             startReversed--;
@@ -100,16 +99,23 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
             capturedPosInOneDiagonal = move.getEndPos();
             endDiagonal = true;
             counterCaptured++;
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            captured.push_back(move.getEndPos());
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+        }
+        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
+            endDiagonal = true;
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            startReversed--;
         }
     }
     endDiagonal = false;
+    capturedPosInOneDiagonal = -1;
     for(int i = startRight; i < startReversed; i++) {
-        const Move move = diagonals.at(i);
+        const Move move = jumps.at(i);
         if(capturedPosInOneDiagonal != -1)
-            diagonals.at(i).addCaptured(capturedPosInOneDiagonal);
+            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
         if(endDiagonal) {
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
             i--;
             startRight--;
             startReversed--;
@@ -119,22 +125,31 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
             capturedPosInOneDiagonal = move.getEndPos();
             endDiagonal = true;
             counterCaptured++;
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            captured.push_back(move.getEndPos());
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            startReversed--;
+        }
+        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
+            endDiagonal = true;
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            startReversed--;
         }
     }
-    for(int i = startReversed; i < diagonals.size(); i++) {
-        if(diagonals[i].getMoveDirection() == MoveDirection::RIGHT) {
+    for(int i = startReversed; i < jumps.size(); i++) {
+        if(jumps[i].getMoveDirection() == MoveDirection::RIGHT) {
             startRight = i;
             break;
         }
     }
     endDiagonal = false;
+    capturedPosInOneDiagonal = -1;
+    
     for(int i = startReversed; i < startRight; i++) {
-        const Move move = diagonals.at(i);
+        const Move move = jumps.at(i);
         if(capturedPosInOneDiagonal != -1)
-            diagonals.at(i).addCaptured(capturedPosInOneDiagonal);
+            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
         if(endDiagonal) {
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
             i--;
             startRight--;
             continue;
@@ -143,16 +158,25 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
             capturedPosInOneDiagonal = move.getEndPos();
             endDiagonal = true;
             counterCaptured++;
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            captured.push_back(move.getEndPos());
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            startReversed--;
+            startRight--;
+        }
+        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
+            endDiagonal = true;
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            startRight--;
         }
     }
     endDiagonal = false;
-    for(int i = startRight; i < diagonals.size(); i++) {
-        const Move move = diagonals.at(i);
+    capturedPosInOneDiagonal = -1;
+    for(int i = startRight; i < jumps.size(); i++) {
+        const Move move = jumps.at(i);
         if(capturedPosInOneDiagonal != -1)
-            diagonals.at(i).addCaptured(capturedPosInOneDiagonal);
+            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
         if(endDiagonal) {
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
             i--;
             continue;
         }
@@ -160,10 +184,15 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
             capturedPosInOneDiagonal = move.getEndPos();
             endDiagonal = true;
             counterCaptured++;
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
+            captured.push_back(move.getEndPos());
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+        }
+        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
+            endDiagonal = true;
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
         }
     }
-    if(jumps.empty())
+    if(jumps.empty()) //TODO znaleziona diagonala, kontynuacja
         return {};
     std::vector<Move> temp;
     for(int i = 0; i < jumps.size(); i++) {
@@ -201,31 +230,8 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
                 savedIterator = captured.end()-2;
             }
         }
-        else if(counterCaptured == 4) {
-            if(i == jumps.size()-4) {
-                savedCaptured = *savedIterator;
-                captured.erase(savedIterator);
-                savedIterator = captured.end();
-                
-            }
-            else if(i == jumps.size()-3) {
-                savedCaptured = *(savedIterator-1);
-                captured.erase(savedIterator-1);
-                savedIterator = captured.end()-1;
-            }
-            else if(i == jumps.size()-2) {
-                savedCaptured = *(savedIterator-2);
-                captured.erase(savedIterator-2);
-                savedIterator = captured.end()-2;
-            }
-            else if(i == jumps.size()-1) {
-                savedCaptured = *(savedIterator-3);
-                captured.erase(savedIterator-3);
-                savedIterator = captured.end()-3;
-            }
-        }
         jumps.at(i) = *new Move(jumps.at(i).getEndPos(), jumps.at(i).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);
-        std::vector<Move> nextJumps = findPawnJumps(jumps.at(i).getEndPos(), pawnType, captured);
+        std::vector<Move> nextJumps = findQueenJumps(jumps.at(i).getEndPos(), pawnType, captured);//TODO error on thrid
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
         unmakeLastMove();   
         bWhiteMove = !bWhiteMove;
