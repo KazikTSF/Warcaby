@@ -20,8 +20,17 @@ private:
     MoveDirection moveDirection = MoveDirection::NONE;
     std::vector<int> capturedPositions;
 public:
-    Move(int start, int end, int type, MoveType mType, MoveDirection direction);
-    void addCaptured(int pos) { capturedPositions.push_back(pos); }
+    Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction) :
+        startPos(start), endPos(end), pawnType(type), moveType(mType), moveDirection(direction) {}
+
+    Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction,
+         const std::vector<int>& captured) : startPos(start), endPos(end), pawnType(type), moveType(mType),
+                                             moveDirection(direction), capturedPositions(captured) {}
+
+    void addCaptured(const int pos) { capturedPositions.push_back(pos); }
+    void addCaptured(std::vector<int> pos) {
+        capturedPositions.insert(capturedPositions.end(), pos.begin(), pos.end());
+    }
     static Move parseMove(const std::string&, int type);
     bool operator== (const Move&) const;
     int getStartPos() const { return startPos; }

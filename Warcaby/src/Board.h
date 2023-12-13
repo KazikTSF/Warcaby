@@ -26,7 +26,7 @@ private:
     
     int* board = new int[32];
     std::vector<MoveHistory> moves;
-    
+    std::vector<Move> possibleMoves;
     bool bWhiteMove = true;
     
     std::vector<Move> possibleDiagonals(const int pos, const int pawnType, const bool reversed) const;
@@ -34,8 +34,8 @@ private:
 
     void findNormalMoves(std::vector<Move>& diagonals, bool bIsQueen) const;
     std::vector<Move> possibleDiagonalsBoth(int pos, int pawnType) const;
-    std::vector<Move> findJumps(int pos, int pawnType);
-    
+    std::vector<Move> findJumps(int pos, int pawnType, std::vector<int> captured);
+    static std::vector<Move> findLongestJumps(const std::vector<Move>& jumps);
     void makeMove(const Move& move);
     void unmakeLastMove();
     void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType) const;
