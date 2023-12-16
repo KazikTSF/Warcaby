@@ -11,6 +11,7 @@ public:
     
     bool isMoveLegal(const Move&) const;
     void generateMoves();
+    void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start, int& stop) const;
     std::vector<Move> findQueenJumps(int pos, int pawnType, std::vector<int> captured);
     void printBoard() const;
     void printPossibleMoves() const;

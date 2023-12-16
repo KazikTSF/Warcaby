@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <complex>
 #include <iostream>
+#include <windows.h>
 
 Board::Board(const bool bUnicode) {
     if(!bUnicode) {
@@ -18,11 +19,10 @@ Board::Board(const bool bUnicode) {
     for(int i = 20; i < 32; i++)
         board[i] = 1;
     board[23] = 2;
-    board[18] = -1;
     board[10] = 0;
     board[3] = 0;
-    board[12] = -1;
-    
+    board[0] = 0;
+    board[5] = 0;
     printBoard();
 }
 bool Board::isMoveLegal(const Move& move) const {
@@ -74,6 +74,47 @@ void Board::generateMoves() {
             possibleMoves.emplace_back(m);
     }
 }
+
+void Board::checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start, int& stop) const {
+    bool endDiagonalCapture = false;
+    bool endDiagonalFriendly = false;
+    int capturedPosInOneDiagonal = -1;
+    for(int i = start; i < stop; i++) {
+        const Move move = jumps.at(i);
+        if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
+            endDiagonalFriendly = true;
+        }
+        if(endDiagonalFriendly) {
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            i--;
+            startReversed--;
+            startRight--;
+            continue;
+        }
+        if(endDiagonalCapture) {
+            if(board[move.getEndPos()] != 0) {
+                jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+                i--;
+                startReversed--;
+                startRight--;
+                endDiagonalFriendly = true;
+            }
+        }
+        else {
+            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
+            i--;
+            startReversed--;
+            startRight--;
+            if(bWhiteMove ? board[move.getEndPos()] < 0 : board[move.getEndPos()] > 0) {
+                capturedPosInOneDiagonal = move.getEndPos();
+                endDiagonalCapture = true;
+            }
+        }
+    }
+    if(capturedPosInOneDiagonal > 0)
+        jumps.at(start).addCaptured(capturedPosInOneDiagonal);
+}
+
 std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> captured) { //kto to pisal, czas na lekcje DRY
     std::vector<Move> jumps = possibleDiagonalsBoth(pos, pawnType);
     int startReversed = queenDiagonal(jumps), startRight = -1, counterCaptured = 0, capturedPosInOneDiagonal = -1;
@@ -83,115 +124,19 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType, std::vector<int> 
             break;
         }
     }
-    bool endDiagonal = false;
-    for(int i = 0; i < startRight; i++) {
-        const Move move = jumps.at(i);
-        if(capturedPosInOneDiagonal != -1)
-            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
-        if(endDiagonal) {
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            i--;
-            startRight--;
-            startReversed--;
-            continue;
-        }
-        if(bWhiteMove ? board[move.getEndPos()] < 0 : board[move.getEndPos()] > 0) {
-            capturedPosInOneDiagonal = move.getEndPos();
-            endDiagonal = true;
-            counterCaptured++;
-            captured.push_back(move.getEndPos());
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-        }
-        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
-            endDiagonal = true;
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            startReversed--;
-        }
-    }
-    endDiagonal = false;
-    capturedPosInOneDiagonal = -1;
-    for(int i = startRight; i < startReversed; i++) {
-        const Move move = jumps.at(i);
-        if(capturedPosInOneDiagonal != -1)
-            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
-        if(endDiagonal) {
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            i--;
-            startRight--;
-            startReversed--;
-            continue;
-        }
-        if(bWhiteMove ? board[move.getEndPos()] < 0 : board[move.getEndPos()] > 0) {
-            capturedPosInOneDiagonal = move.getEndPos();
-            endDiagonal = true;
-            counterCaptured++;
-            captured.push_back(move.getEndPos());
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            startReversed--;
-        }
-        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
-            endDiagonal = true;
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            startReversed--;
-        }
-    }
+    checkQueenDiagonal(jumps, startReversed, startRight, 0, startRight);
+    checkQueenDiagonal(jumps, startReversed, startRight, startRight, startReversed);
     for(int i = startReversed; i < jumps.size(); i++) {
         if(jumps[i].getMoveDirection() == MoveDirection::RIGHT) {
             startRight = i;
             break;
         }
     }
-    endDiagonal = false;
-    capturedPosInOneDiagonal = -1;
+    int startReversedCopy = startReversed;
+    checkQueenDiagonal(jumps, startReversedCopy, startRight, startReversedCopy, startRight);
+    startReversed = jumps.size();
+    checkQueenDiagonal(jumps, startReversed, startRight, startRight, startReversed);
     
-    for(int i = startReversed; i < startRight; i++) {
-        const Move move = jumps.at(i);
-        if(capturedPosInOneDiagonal != -1)
-            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
-        if(endDiagonal) {
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            i--;
-            startRight--;
-            continue;
-        }
-        if(bWhiteMove ? board[move.getEndPos()] < 0 : board[move.getEndPos()] > 0) {
-            capturedPosInOneDiagonal = move.getEndPos();
-            endDiagonal = true;
-            counterCaptured++;
-            captured.push_back(move.getEndPos());
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            startReversed--;
-            startRight--;
-        }
-        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
-            endDiagonal = true;
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            startRight--;
-        }
-    }
-    endDiagonal = false;
-    capturedPosInOneDiagonal = -1;
-    for(int i = startRight; i < jumps.size(); i++) {
-        const Move move = jumps.at(i);
-        if(capturedPosInOneDiagonal != -1)
-            jumps.at(i).addCaptured(capturedPosInOneDiagonal);
-        if(endDiagonal) {
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-            i--;
-            continue;
-        }
-        if(bWhiteMove ? board[move.getEndPos()] < 0 : board[move.getEndPos()] > 0) {
-            capturedPosInOneDiagonal = move.getEndPos();
-            endDiagonal = true;
-            counterCaptured++;
-            captured.push_back(move.getEndPos());
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-        }
-        else if(bWhiteMove ? board[move.getEndPos()] > 0 : board[move.getEndPos()] < 0) {
-            endDiagonal = true;
-            jumps.erase(std::find(jumps.begin(), jumps.end(), move));
-        }
-    }
     if(jumps.empty()) //TODO znaleziona diagonala, kontynuacja
         return {};
     std::vector<Move> temp;
