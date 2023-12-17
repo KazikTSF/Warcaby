@@ -32,11 +32,20 @@ public:
         capturedPositions.insert(capturedPositions.end(), pos.begin(), pos.end());
     }
     static Move parseMove(const std::string&, int type);
-    bool operator== (const Move&) const;
     int getStartPos() const { return startPos; }
     int getEndPos() const { return endPos; }
     int getPawnType() const { return pawnType; }
     MoveType getMoveType() const { return moveType; }
     MoveDirection getMoveDirection() const { return moveDirection; }
     std::vector<int> getCapturedPositions() const { return capturedPositions; }
+
+    friend bool operator<(const Move& lhs, const Move& rhs) { return lhs.startPos < rhs.startPos; }
+    friend bool operator==(const Move& lhs, const Move& rhs) {
+        return lhs.startPos == rhs.startPos
+            && lhs.endPos == rhs.endPos
+            && lhs.pawnType == rhs.pawnType
+            && lhs.moveType == rhs.moveType
+            && lhs.moveDirection == rhs.moveDirection
+            && lhs.capturedPositions == rhs.capturedPositions;
+    }
 };

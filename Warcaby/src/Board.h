@@ -11,15 +11,15 @@ public:
     
     bool isMoveLegal(const Move&) const;
     void generateMoves();
-    void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start, int& stop) const;
-    std::vector<Move> findQueenJumps(int pos, int pawnType, std::vector<int> captured);
+    void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start,
+                            int& stop) const;
+    std::vector<Move> findQueenJumps(int pos, int pawnType);
     void printBoard() const;
     void printPossibleMoves() const;
 private:
     struct MoveHistory {
         Move move;
         std::vector<int> capturedPawns;
-        MoveHistory(const Move& m, const std::vector<int>& c) : move(m), capturedPawns(c) {}
     };
     std::string whitePawn = "\xE2\x9B\x82";
     std::string whiteQueen = "\xE2\x9B\x83";

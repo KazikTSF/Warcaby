@@ -40,7 +40,3 @@ Move Move::parseMove(const std::string& move, int type) {
     }
     return {start, end, type, MoveType::NORMAL, direction};
 }
-
-bool Move::operator== (const Move& m) const{
-    return startPos == m.startPos && endPos == m.endPos && pawnType == m.pawnType;
-}
