@@ -26,7 +26,5 @@ Move Move::parseMove(const std::string& move, int type) {
         std::getline(ss, temp, '-');
         end = std::stoi(temp)-1;
     }
-    if(abs(start-end)>5)
-        return {start, end, type, MoveType::JUMP, MoveDirection::JUMP};
-    return {start, end, type, MoveType::NORMAL, MoveDirection::NONE};
+    return {start, end, type, MoveType::NONE, MoveDirection::NONE};
 }

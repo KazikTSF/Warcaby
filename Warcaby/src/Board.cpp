@@ -18,7 +18,6 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
-    bWhiteMove = false;
     printBoard();
 }
 void Board::generateMoves() {
@@ -48,7 +47,11 @@ void Board::generateMoves() {
                     possibleMoves.push_back(j);
             }
             if(!bJumpsPossible) {
-                std::vector<Move> diagonals = possibleDiagonals(i, piece, false);
+                std::vector<Move> diagonals;
+                if(bIsQueen)
+                    diagonals = possibleDiagonalsBoth(i, piece);
+                else
+                    diagonals = possibleDiagonals(i, piece, false);
                 diagonals = findNormalMoves(diagonals, bIsQueen);
                 for(const auto& j : diagonals)
                     possibleMoves.push_back(j);
@@ -249,7 +252,12 @@ void Board::makeMove(const Move& move) {
             board[captured] = 0;
         }
     }
-    board[move.getEndPos()] = move.getPawnType();
+    if(bWhiteMove && (move.getEndPos() > -1 && move.getEndPos() < 4))
+        board[move.getEndPos()] = 2;
+    else if(!bWhiteMove && (move.getEndPos() > 27 && move.getEndPos() < 32))
+        board[move.getEndPos()] = -2;
+    else
+        board[move.getEndPos()] = move.getPawnType();
     bWhiteMove = !bWhiteMove;
     const MoveHistory history = {move, capturedPawns};
     moves.push_back(history);
@@ -386,7 +394,6 @@ std::vector<Move> Board::possibleDiagonals(const int pos, const int pawnType, co
 
 std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const {
     if(bIsQueen) {
-        diagonals = possibleDiagonalsBoth(diagonals.at(0).getStartPos(), diagonals.at(0).getPawnType());
         int firstReversed = queenDiagonal(diagonals);
         bool bEndQueenMoveLeft = false, bEndQueenMoveRight = false;
         int startRight = 0;
