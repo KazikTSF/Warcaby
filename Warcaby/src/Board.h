@@ -20,6 +20,8 @@ public:
     bool isWhiteMove() const { return bWhiteMove; }
     bool isLost() const;
     Move findMove(const Move& move) const;
+    std::vector<Move> getPossibleMoves() const { return possibleMoves; }
+
 private:
     struct MoveHistory {
         Move move;

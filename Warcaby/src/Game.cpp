@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "Engine.h"
+
 Game::Game(const bool bUnicode) {
     board = new Board(bUnicode);
     board->generateMoves();
@@ -17,6 +19,8 @@ Game::Game(const bool bUnicode) {
             std::cout << "Ruch nie jest legalny, Podaj inny ruch\n";
             continue;
         }
+        board->generateMoves();
+        board->makeMove(Engine::bestMove(*board, !board->isWhiteMove(), 0));
         board->generateMoves();
         board->printBoard();
         board->printPossibleMoves();

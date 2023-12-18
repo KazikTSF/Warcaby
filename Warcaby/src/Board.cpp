@@ -18,8 +18,6 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
-    board[9] = 1;
-    bWhiteMove = !bWhiteMove;
     printBoard();
 }
 void Board::generateMoves() {
@@ -175,8 +173,6 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
     return jumps;
 }
 std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> captured) {
-    if(pos == 26)
-        std::cout << "Debug";
     std::vector<Move> jumps;
     const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
     int counterCaptured = 0;
