@@ -233,6 +233,7 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="src\Printer.cpp" />
     <ClCompile Include="src\Warcaby.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -315,6 +316,7 @@
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\Move.h" />
+    <ClInclude Include="src\Printer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

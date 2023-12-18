@@ -3,11 +3,13 @@
 #include <iostream>
 
 #include "Engine.h"
+#include "Printer.h"
 
 Game::Game(const bool bUnicode) {
     board = new Board(bUnicode);
+    Printer::printBoard(board->getBoard());
     board->generateMoves();
-    board->printPossibleMoves();
+    Printer::printPossibleMoves(board->getPossibleMoves());
     bool bContinue = true;
     while(bContinue) {
         std::string move;
@@ -22,8 +24,8 @@ Game::Game(const bool bUnicode) {
         board->generateMoves();
         board->makeMove(Engine::bestMove(*board, !board->isWhiteMove(), 0));
         board->generateMoves();
-        board->printBoard();
-        board->printPossibleMoves();
+        Printer::printBoard(board->getBoard());
+        Printer::printPossibleMoves(board->getPossibleMoves());
         bContinue = !board->isLost();
     }
 }
