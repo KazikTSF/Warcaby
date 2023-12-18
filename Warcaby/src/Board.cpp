@@ -18,6 +18,10 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
+    board[8] = 0;
+    board[13] = 1;
+    board[14] = 1; //TODO pionek w tej pozycji po biciu wraca na poprzednie miejsce
+    bWhiteMove = false;
     printBoard();
 }
 void Board::generateMoves() {
