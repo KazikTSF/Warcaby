@@ -10,11 +10,11 @@ Move Move::parseMove(const std::string& move, int type) {
             throw std::invalid_argument("move.size()");
         start = move[0]-'a' + 8*(8-(move[1]-'0'));
         end = move[3]-'a' + 8*(8-(move[4]-'0'));
-        bool evenRowStart = start/8 % 2 == 0;
-        bool evenRowEnd = end/8 % 2 == 0;
+        const bool evenRowStart = start/8 % 2 == 0;
+        const bool evenRowEnd = end/8 % 2 == 0;
         if((start % 2 == 1 && !evenRowStart) || (end %2 == 1 && !evenRowEnd))
             throw std::invalid_argument("move");
-        if((start % 2 == 0 && evenRowStart) || (end %2 == 0 && evenRowEnd))
+        if((start % 2 == 1 && !evenRowStart) || (end %2 == 1 && !evenRowEnd))
             throw std::invalid_argument("move");
         start /= 2;
         end /= 2;

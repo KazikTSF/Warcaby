@@ -42,7 +42,6 @@ public:
     friend bool operator<(const Move& lhs, const Move& rhs) { return lhs.startPos < rhs.startPos; }
     friend bool operator==(const Move& lhs, const Move& rhs) {
         return lhs.startPos == rhs.startPos
-            && lhs.endPos == rhs.endPos
-            && lhs.moveType == rhs.moveType;
+            && lhs.endPos == rhs.endPos;
     }
 };

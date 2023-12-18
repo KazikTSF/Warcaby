@@ -41,7 +41,7 @@ private:
 
     std::vector<Move> findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const;
     std::vector<Move> possibleDiagonalsBoth(int pos, int pawnType) const;
-    std::vector<Move> findPawnJumps(int pos, int pawnType, std::vector<int> captured);
+    std::vector<Move> findPawnJumps(int pos, int pawnType);
     static std::vector<Move> findLongestJumps(const std::vector<Move>& jumps);
     void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType, bool reversed) const;
 

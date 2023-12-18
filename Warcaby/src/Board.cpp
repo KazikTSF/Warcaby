@@ -38,7 +38,7 @@ void Board::generateMoves() {
             if(abs(piece) == 2)
                 jumpsT = findQueenJumps(i, board[i]);
             else 
-                jumpsT = findPawnJumps(i, board[i], {});
+                jumpsT = findPawnJumps(i, board[i]);
             std::vector<Move> jumps;
             jumps.reserve(jumpsT.size());
             for(const Move& m : jumpsT)
@@ -176,10 +176,9 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
     }
     return jumps;
 }
-std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> captured) {
+std::vector<Move> Board::findPawnJumps(int pos, int pawnType) {
     std::vector<Move> jumps;
     const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
-    int counterCaptured = 0;
     for(const Move& m : diagonals) {
         if(bWhiteMove ? board[m.getEndPos()] < 0 : board[m.getEndPos()] > 0) { //sprawdza czy bity pionek jest przeciwnego koloru
             std::vector<Move> candidates = possibleDiagonalsBoth(m.getEndPos(), pawnType);
@@ -200,14 +199,7 @@ std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> c
                 continue;
             if (board[candidates.at(0).getEndPos()] == 0) { //kandydat moze byc tylko jeden
                 jumps.emplace_back(m.getStartPos(), candidates.at(0).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP);
-                jumps.at(jumps.size()-1).addCaptured(captured);
                 jumps.at(jumps.size()-1).addCaptured(m.getEndPos());
-                auto temp = jumps.at(jumps.size()-1).getCapturedPositions();
-                for(const int i : temp) {
-                    if(std::find(captured.begin(), captured.end(), i) == captured.end())
-                        captured.push_back(i);
-                }
-                counterCaptured++;
             }
         }
     }
@@ -215,12 +207,11 @@ std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> c
         return {};
     std::vector<Move> temp;
     for (auto& i : jumps) {
-        i = *new Move(i.getStartPos(), i.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);
         makeMove(i);
         bWhiteMove = !bWhiteMove;
-        std::vector<Move> nextJumps = findPawnJumps(i.getEndPos(), pawnType, captured);
-        for(const Move& jump : nextJumps)
-            i.addCaptured(jump.getCapturedPositions());
+        std::vector<Move> nextJumps = findPawnJumps(i.getEndPos(), pawnType);
+        for(Move& jump : nextJumps)
+            jump.addCaptured(i.getCapturedPositions());
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
         unmakeLastMove();   
         bWhiteMove = !bWhiteMove;
