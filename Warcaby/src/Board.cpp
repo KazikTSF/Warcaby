@@ -18,20 +18,12 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
-    board[23] = 2;
-    board[10] = 0;
-    board[3] = 0;
-    board[18] = -2;
-    board[12] = 1;
+    board[9] = 1;
+    bWhiteMove = !bWhiteMove;
     printBoard();
 }
-bool Board::isMoveLegal(const Move& move) const {
-    if(std::any_of(possibleMoves.begin(), possibleMoves.end(), [&move](const Move& m) {return m == move;}))
-            return true;
-    return false;
-}
-
 void Board::generateMoves() {
+    possibleMoves.clear();
     bool bJumpsPossible = false;
     for(int i = 0; i < 32; i++) {
         const int piece = board[i];
@@ -183,6 +175,8 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
     return jumps;
 }
 std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> captured) {
+    if(pos == 26)
+        std::cout << "Debug";
     std::vector<Move> jumps;
     const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
     int counterCaptured = 0;
@@ -220,49 +214,16 @@ std::vector<Move> Board::findPawnJumps(int pos, int pawnType, std::vector<int> c
     if(jumps.empty())
         return {};
     std::vector<Move> temp;
-    for(int i = 0; i < jumps.size(); i++) {
-        int savedCaptured; 
-        std::vector<int>::const_iterator savedIterator = captured.end()-1;
-        if(counterCaptured == 2) {
-            if(i == jumps.size()-2) {
-                savedCaptured = *savedIterator;
-                captured.erase(savedIterator);
-                savedIterator = captured.end();
-            }
-            else if(i == jumps.size()-1) {
-                savedCaptured = *(savedIterator-1);
-                captured.erase(savedIterator-1);
-                savedIterator = captured.end()-1;
-            }
-        }
-        else if(counterCaptured == 3) {
-            if(i == jumps.size()-3) {
-                savedCaptured = *savedIterator;
-                captured.erase(savedIterator);
-                savedIterator = captured.end();
-                
-            }
-            else if(i == jumps.size()-2) {
-                savedCaptured = *(savedIterator-1);
-                captured.erase(savedIterator-1);
-                savedIterator = captured.end()-1;
-            }
-            else if(i == jumps.size()-1) {
-                savedCaptured = *(savedIterator-2);
-                captured.erase(savedIterator-2);
-                savedIterator = captured.end()-2;
-            }
-        }
-        jumps.at(i) = *new Move(jumps.at(i).getStartPos(), jumps.at(i).getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);//TODO zmiana end na start?
-        makeMove(jumps.at(i));
+    for (auto& i : jumps) {
+        i = *new Move(i.getStartPos(), i.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, captured);
+        makeMove(i);
         bWhiteMove = !bWhiteMove;
-        std::vector<Move> nextJumps = findPawnJumps(jumps.at(i).getEndPos(), pawnType, captured);
+        std::vector<Move> nextJumps = findPawnJumps(i.getEndPos(), pawnType, captured);
+        for(const Move& jump : nextJumps)
+            i.addCaptured(jump.getCapturedPositions());
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
         unmakeLastMove();   
         bWhiteMove = !bWhiteMove;
-        if(counterCaptured > 1) {
-            captured.insert(savedIterator, savedCaptured);
-        }
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
     for(Move& move : jumps) {
@@ -285,10 +246,14 @@ std::vector<Move> Board::findLongestJumps(const std::vector<Move>& jumps) {
     }
     return res;
 }
-
+Move Board::findMove(const Move& move) const {
+    const auto res = std::find(possibleMoves.begin(), possibleMoves.end(), move);
+    if(res == possibleMoves.end())
+        throw std::invalid_argument("move");
+    return *res;
+}
 void Board::makeMove(const Move& move) {
-    
-    std::vector<int> capturedPawns;
+    std::vector<int> capturedPawns; 
     board[move.getStartPos()] = 0;
     if(move.getMoveType() == MoveType::JUMP) {
         for(const int captured : move.getCapturedPositions()) {
@@ -361,6 +326,7 @@ int Board::queenDiagonal(std::vector<Move>& diagonals) const {
     diagonals = left1;
     return res;
 }
+
 std::vector<Move> Board::possibleDiagonals(const int pos, const int pawnType, const bool reversed) const {
     std::vector<Move> diagonals;
     const int row=pos/4;
@@ -368,27 +334,59 @@ std::vector<Move> Board::possibleDiagonals(const int pos, const int pawnType, co
     const bool bFirstColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
     if(row % 2 == 1) {
         if(!bFirstColumn) {
-            if(bWhiteMove && !reversed)
-                diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-            else
-                diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+            if(bWhiteMove) {
+                if(reversed)
+                    diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+                else
+                    diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+            }
+            else {
+                if(reversed)
+                    diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+                else
+                    diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+            }
         }
-        if(bWhiteMove && !reversed)
-            diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-        else
-            diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+        if(bWhiteMove) {
+            if(reversed)
+                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+            else
+                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+        }
+        else {
+            if(reversed)
+                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+            else
+                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+        }
     }
     else {
         if(!bLastColumn) {
-            if(bWhiteMove && !reversed)
-                diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-            else
-                diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+            if(bWhiteMove) {
+                if(reversed)
+                    diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+                else
+                    diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+            }
+            else {
+                if(reversed)
+                    diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+                else
+                    diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
+            }
         }
-        if(bWhiteMove && !reversed)
-            diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-        else
-            diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+        if(bWhiteMove) {
+            if(reversed)
+                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+            else
+                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+        }
+        else {
+            if(reversed)
+                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+            else
+                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
+        }
     }
     for(const auto& move : diagonals) {
         if(move.getEndPos() < 0 || move.getEndPos() > 31) {
@@ -562,6 +560,11 @@ void Board::printOddRow(int& i) const {
         }
     }
 }
+
+bool Board::isLost() const {
+    return moves.empty();
+}
+
 void Board::printBoard() const {
     const std::string lineSeparator = "  +---+---+---+---+---+---+---+---+";
     std::cout << lineSeparator << std::endl;

@@ -43,9 +43,6 @@ public:
     friend bool operator==(const Move& lhs, const Move& rhs) {
         return lhs.startPos == rhs.startPos
             && lhs.endPos == rhs.endPos
-            && lhs.pawnType == rhs.pawnType
-            && lhs.moveType == rhs.moveType
-            && lhs.moveDirection == rhs.moveDirection
-            && lhs.capturedPositions == rhs.capturedPositions;
+            && lhs.moveType == rhs.moveType;
     }
 };

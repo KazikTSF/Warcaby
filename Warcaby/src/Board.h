@@ -9,13 +9,17 @@ public:
     explicit Board(bool);
     ~Board() {delete [] board;}
     
-    bool isMoveLegal(const Move&) const;
     void generateMoves();
     void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start,
                             int& stop) const;
     std::vector<Move> findQueenJumps(int pos, int pawnType);
     void printBoard() const;
     void printPossibleMoves() const;
+    void makeMove(const Move& move);
+    void unmakeLastMove();
+    bool isWhiteMove() const { return bWhiteMove; }
+    bool isLost() const;
+    Move findMove(const Move& move) const;
 private:
     struct MoveHistory {
         Move move;
@@ -30,7 +34,6 @@ private:
     std::vector<MoveHistory> moves;
     std::vector<Move> possibleMoves;
     bool bWhiteMove = true;
-    
     std::vector<Move> possibleDiagonals(const int pos, const int pawnType, const bool reversed) const;
     int queenDiagonal(std::vector<Move>& diagonals) const;
 
@@ -38,10 +41,9 @@ private:
     std::vector<Move> possibleDiagonalsBoth(int pos, int pawnType) const;
     std::vector<Move> findPawnJumps(int pos, int pawnType, std::vector<int> captured);
     static std::vector<Move> findLongestJumps(const std::vector<Move>& jumps);
-    void makeMove(const Move& move);
-    void unmakeLastMove();
     void findInDirection(std::vector<Move>& diagonalsInDirection, MoveDirection direction, int startPos, int pawnType, bool reversed) const;
 
     void printEvenRow(int& i) const;
     void printOddRow(int& i) const;
+
 };
