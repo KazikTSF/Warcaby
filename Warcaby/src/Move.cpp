@@ -19,11 +19,16 @@ Move Move::parseMove(const std::string& move, int type) {
         start /= 2;
         end /= 2;
     } else {
+        char delimeter = 0;
+        for (const char c : move) {
+            if(!isdigit(c))
+                delimeter = c;
+        }
         std::stringstream ss(move);
         std::string temp;
-        std::getline(ss, temp, '-');
+        std::getline(ss, temp, delimeter);
         start = std::stoi(temp)-1;
-        std::getline(ss, temp, '-');
+        std::getline(ss, temp, delimeter);
         end = std::stoi(temp)-1;
     }
     return {start, end, type, MoveType::NONE, MoveDirection::NONE};

@@ -583,6 +583,3 @@ void Board::printPossibleMoves() const {
         printf("%d - %d; ", move.getStartPos()+1, move.getEndPos()+1);
     }
 }
-
-
-
