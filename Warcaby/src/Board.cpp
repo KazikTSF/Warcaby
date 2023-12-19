@@ -5,6 +5,8 @@
 #include <iostream>
 #include <windows.h>
 
+#include "Diagonals.h"
+
 
 Board::Board(const bool bUnicode) {
     if(!bUnicode) {
@@ -19,6 +21,7 @@ Board::Board(const bool bUnicode) {
         board[i] = 0;
     for(int i = 20; i < 32; i++)
         board[i] = 1;
+    Diagonals::setBoard(board);
 }
 void Board::generateMoves() {
     possibleMoves.clear();
@@ -49,9 +52,9 @@ void Board::generateMoves() {
             if(!bJumpsPossible) {
                 std::vector<Move> diagonals;
                 if(bIsQueen)
-                    diagonals = possibleDiagonalsBoth(i, piece);
+                    diagonals = Diagonals::possibleDiagonalsBoth(i, piece);
                 else
-                    diagonals = possibleDiagonals(i, piece, false);
+                    diagonals = Diagonals::possibleDiagonals(i, piece, false);
                 diagonals = findNormalMoves(diagonals, bIsQueen);
                 for(const auto& j : diagonals)
                     possibleMoves.push_back(j);
@@ -131,8 +134,8 @@ void Board::checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int
 }
 
 std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
-    std::vector<Move> jumps = possibleDiagonalsBoth(pos, pawnType);
-    int startReversed = queenDiagonal(jumps), startRight = -1;
+    std::vector<Move> jumps = Diagonals::possibleDiagonalsBoth(pos, pawnType);
+    int startReversed = Diagonals::queenDiagonal(jumps), startRight = -1;
     for(int i = 0; i < startReversed; i++) {
         if(jumps.at(i).getMoveDirection() == MoveDirection::RIGHT) {
             startRight = i;
@@ -163,12 +166,14 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
     for (const auto& jump : jumps) {
         makeMove(jump);
         bWhiteMove = !bWhiteMove;
+        Diagonals::changeMove();
         std::vector<Move> nextJumps = findQueenJumps(jump.getEndPos(), pawnType);
         for(Move& m : nextJumps)
             m.addCaptured(jump.getCapturedPositions());
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
         unmakeLastMove();   
         bWhiteMove = !bWhiteMove;
+        Diagonals::changeMove();
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
     for(Move& move : jumps) {
@@ -178,10 +183,10 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
 }
 std::vector<Move> Board::findPawnJumps(int pos, int pawnType) {
     std::vector<Move> jumps;
-    const std::vector<Move> diagonals = possibleDiagonalsBoth(pos, pawnType);
+    const std::vector<Move> diagonals = Diagonals::possibleDiagonalsBoth(pos, pawnType);
     for(const Move& m : diagonals) {
         if(bWhiteMove ? board[m.getEndPos()] < 0 : board[m.getEndPos()] > 0) { //sprawdza czy bity pionek jest przeciwnego koloru
-            std::vector<Move> candidates = possibleDiagonalsBoth(m.getEndPos(), pawnType);
+            std::vector<Move> candidates = Diagonals::possibleDiagonalsBoth(m.getEndPos(), pawnType);
             int n = candidates.size();
             for(int i = 0; i < n; i++) {
                 Move c = candidates.at(i);
@@ -259,6 +264,8 @@ void Board::makeMove(const Move& move) {
     else
         board[move.getEndPos()] = move.getPawnType();
     bWhiteMove = !bWhiteMove;
+    Diagonals::changeMove();
+    Diagonals::setBoard(board);
     const MoveHistory history = {move, capturedPawns};
     moves.push_back(history);
 }
@@ -271,130 +278,13 @@ void Board::unmakeLastMove() {
     board[lastMove.move.getStartPos()] = lastMove.move.getPawnType();
     board[lastMove.move.getEndPos()] = 0;
     bWhiteMove = !bWhiteMove;
-}
-
-void Board::findInDirection(std::vector<Move>& diagonalsInDirection, const MoveDirection direction, const int startPos, const int pawnType, const bool reversed) const {
-    size_t n = diagonalsInDirection.size();
-    for(int i = 0; i < n; i++) {
-        auto candidates = possibleDiagonals(diagonalsInDirection.at(i).getEndPos(), pawnType, reversed);
-        for(const Move& move : candidates) {
-            if(move.getMoveDirection() == direction) {
-                n++;
-                diagonalsInDirection.emplace_back(startPos, move.getEndPos(), pawnType, move.getMoveType(), move.getMoveDirection());
-                break;
-            }
-        }
-    }
-}
-
-int Board::queenDiagonal(std::vector<Move>& diagonals) const {
-    // funkcja zwaraca indeks pierwszego ruchu skierowanego w przeciwna strone
-    std::vector<Move> left1, left2, right1, right2;
-    for(const auto& move : diagonals) {
-        if(move.getEndPos()-move.getStartPos() > 0) {
-            if(move.getMoveDirection() == MoveDirection::LEFT)
-                left1.push_back(move);
-            else if(move.getMoveDirection() == MoveDirection::RIGHT)
-                right1.push_back(move);
-        }
-        else {
-            if(move.getMoveDirection() == MoveDirection::LEFT)
-                left2.push_back(move);
-            else if(move.getMoveDirection() == MoveDirection::RIGHT)
-                right2.push_back(move);
-        }
-    }
-    if(!left1.empty())
-        findInDirection(left1, MoveDirection::LEFT, left1.at(0).getStartPos(), bWhiteMove ? 2 : -2, left1[0].getStartPos()-left1[0].getEndPos() > 0 ? false : true);
-    if(!right1.empty())
-        findInDirection(right1, MoveDirection::RIGHT, right1.at(0).getStartPos(), bWhiteMove ? 2 : -2, right1[0].getStartPos()-right1[0].getEndPos() > 0 ? false : true);
-    const int res = right1.size() + left1.size();
-    
-    left1.insert(left1.end(), right1.begin(), right1.end());
-    if(!left2.empty())
-        findInDirection(left2, MoveDirection::LEFT, left2.at(0).getStartPos(), bWhiteMove ? 2 : -2, left2[0].getStartPos()-left2[0].getEndPos() > 0 ? false : true);
-    if(!right2.empty()) {
-        findInDirection(right2, MoveDirection::RIGHT, right2.at(0).getStartPos(), bWhiteMove ? 2 : -2, right2[0].getStartPos()-right2[0].getEndPos() > 0 ? false : true);
-        left2.insert(left2.end(), right2.begin(), right2.end());
-    }
-    
-    left1.insert(left1.end(), left2.begin(), left2.end());
-    diagonals = left1;
-    return res;
-}
-
-std::vector<Move> Board::possibleDiagonals(const int pos, const int pawnType, const bool reversed) const {
-    std::vector<Move> diagonals;
-    const int row=pos/4;
-    const bool bLastColumn = (pos+1)%4==0 && (pos+1)%8 != 0;
-    const bool bFirstColumn = (pos+1)%4==1 && (pos+1)%8 != 1;
-    if(row % 2 == 1) {
-        if(!bFirstColumn) {
-            if(bWhiteMove) {
-                if(reversed)
-                    diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-                else
-                    diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-            }
-            else {
-                if(reversed)
-                    diagonals.emplace_back(pos, pos-5, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-                else
-                    diagonals.emplace_back(pos, pos+3, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-            }
-        }
-        if(bWhiteMove) {
-            if(reversed)
-                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-            else
-                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-        }
-        else {
-            if(reversed)
-                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-            else
-                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-        }
-    }
-    else {
-        if(!bLastColumn) {
-            if(bWhiteMove) {
-                if(reversed)
-                    diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-                else
-                    diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-            }
-            else {
-                if(reversed)
-                    diagonals.emplace_back(pos, pos-3, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-                else
-                    diagonals.emplace_back(pos, pos+5, pawnType, MoveType::NORMAL, MoveDirection::RIGHT);
-            }
-        }
-        if(bWhiteMove) {
-            if(reversed)
-                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-            else
-                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-        }
-        else {
-            if(reversed)
-                diagonals.emplace_back(pos, pos-4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-            else
-                diagonals.emplace_back(pos, pos+4, pawnType, MoveType::NORMAL, MoveDirection::LEFT);
-        }
-    }
-    for(const auto& move : diagonals) {
-        if(move.getEndPos() < 0 || move.getEndPos() > 31) {
-            diagonals.erase(std::find(diagonals.begin(), diagonals.end(), move));
-        }
-    }
-    return diagonals;
+    Diagonals::changeMove();
+    Diagonals::setBoard(board);
 }
 
 std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const {
     if(bIsQueen) {
-        int firstReversed = queenDiagonal(diagonals);
+        int firstReversed = Diagonals::queenDiagonal(diagonals);
         bool bEndQueenMoveLeft = false, bEndQueenMoveRight = false;
         int startRight = 0;
         for(int i = 0; i < firstReversed; i++) {
@@ -495,14 +385,6 @@ std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQu
     }
     return diagonals;
 }
-
-std::vector<Move> Board::possibleDiagonalsBoth(int pos, int pawnType) const {
-    std::vector<Move> temp1 = possibleDiagonals(pos, pawnType, false);
-    std::vector<Move> temp2 = possibleDiagonals(pos, pawnType, true);
-    temp1.insert(temp1.end(), temp2.begin(), temp2.end());
-    return temp1;
-}
-
 bool Board::isLost() const {
     return moves.empty();
 }
