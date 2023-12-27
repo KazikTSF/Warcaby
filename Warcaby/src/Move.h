@@ -1,4 +1,5 @@
 #pragma once
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@ private:
     MoveDirection moveDirection = MoveDirection::NONE;
     std::vector<int> capturedPositions;
 public:
+    int eval = 0;
     Move(const int start, const int end, const int type, const MoveType mType, const MoveDirection direction) :
         startPos(start), endPos(end), pawnType(type), moveType(mType), moveDirection(direction) {}
 
@@ -43,5 +45,8 @@ public:
     friend bool operator==(const Move& lhs, const Move& rhs) {
         return lhs.startPos == rhs.startPos
             && lhs.endPos == rhs.endPos;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Move& obj) {
+        return os << obj.startPos << "-" << obj.endPos;
     }
 };

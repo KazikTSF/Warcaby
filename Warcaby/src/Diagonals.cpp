@@ -29,16 +29,16 @@ int Diagonals::queenDiagonal(std::vector<Move>& diagonals) {
         }
     }
     if(!left1.empty())
-        findInDirection(left1, MoveDirection::LEFT, left1.at(0).getStartPos(), bWhiteMove ? 2 : -2, left1[0].getStartPos()-left1[0].getEndPos() > 0 ? false : true);
+        findInDirection(left1, MoveDirection::LEFT, left1.at(0).getStartPos(), bWhiteMove ? 2 : -2, left1[0].getStartPos()-left1[0].getEndPos() > 0 ? !bWhiteMove : bWhiteMove);
     if(!right1.empty())
-        findInDirection(right1, MoveDirection::RIGHT, right1.at(0).getStartPos(), bWhiteMove ? 2 : -2, right1[0].getStartPos()-right1[0].getEndPos() > 0 ? false : true);
+        findInDirection(right1, MoveDirection::RIGHT, right1.at(0).getStartPos(), bWhiteMove ? 2 : -2, right1[0].getStartPos()-right1[0].getEndPos() > 0 ? !bWhiteMove : bWhiteMove);
     const int res = right1.size() + left1.size();
     
     left1.insert(left1.end(), right1.begin(), right1.end());
     if(!left2.empty())
-        findInDirection(left2, MoveDirection::LEFT, left2.at(0).getStartPos(), bWhiteMove ? 2 : -2, left2[0].getStartPos()-left2[0].getEndPos() > 0 ? false : true);
-    if(!right2.empty()) {
-        findInDirection(right2, MoveDirection::RIGHT, right2.at(0).getStartPos(), bWhiteMove ? 2 : -2, right2[0].getStartPos()-right2[0].getEndPos() > 0 ? false : true);
+           findInDirection(left2, MoveDirection::LEFT, left2.at(0).getStartPos(), bWhiteMove ? 2 : -2, left2[0].getStartPos()-left2[0].getEndPos() > 0 ? !bWhiteMove : bWhiteMove);
+ if(!right2.empty()) {
+        findInDirection(right2, MoveDirection::RIGHT, right2.at(0).getStartPos(), bWhiteMove ? 2 : -2, right2[0].getStartPos()-right2[0].getEndPos() > 0 ? !bWhiteMove : bWhiteMove);
         left2.insert(left2.end(), right2.begin(), right2.end());
     }
     

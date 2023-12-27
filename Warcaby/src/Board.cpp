@@ -15,6 +15,8 @@ Board::Board(const bool bUnicode) {
         Printer::blackPawn = 'b';
         Printer::blackQueen = 'B';
     }
+    Printer::init(this);
+    
     for(int i = 0; i < 12; i++)
         board[i] = -1;
     for(int i = 12; i < 20; i++)
@@ -22,6 +24,7 @@ Board::Board(const bool bUnicode) {
     for(int i = 20; i < 32; i++)
         board[i] = 1;
     Diagonals::setBoard(board);
+    generateMoves();
 }
 void Board::generateMoves() {
     possibleMoves.clear();
@@ -34,7 +37,7 @@ void Board::generateMoves() {
         const bool bIsWhite = piece > 0 ? true : false;
         if((bWhiteMove && bIsWhite) || (!bWhiteMove && !bIsWhite)) {
             std::vector<Move> jumpsT;
-            if(abs(piece) == 2)
+            if(bIsQueen)
                 jumpsT = findQueenJumps(i, board[i]);
             else 
                 jumpsT = findPawnJumps(i, board[i]);
@@ -164,14 +167,14 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
         return {};
     std::vector<Move> temp;
     for (const auto& jump : jumps) {
-        makeMove(jump);
+        makeMove(jump, false);
         bWhiteMove = !bWhiteMove;
         Diagonals::changeMove();
         std::vector<Move> nextJumps = findQueenJumps(jump.getEndPos(), pawnType);
         for(Move& m : nextJumps)
             m.addCaptured(jump.getCapturedPositions());
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
-        unmakeLastMove();   
+        unmakeLastMove(false);   
         bWhiteMove = !bWhiteMove;
         Diagonals::changeMove();
     }
@@ -212,13 +215,13 @@ std::vector<Move> Board::findPawnJumps(int pos, int pawnType) {
         return {};
     std::vector<Move> temp;
     for (auto& i : jumps) {
-        makeMove(i);
+        makeMove(i, false);
         bWhiteMove = !bWhiteMove;
         std::vector<Move> nextJumps = findPawnJumps(i.getEndPos(), pawnType);
         for(Move& jump : nextJumps)
             jump.addCaptured(i.getCapturedPositions());
         temp.insert(temp.end(), nextJumps.begin(), nextJumps.end());
-        unmakeLastMove();   
+        unmakeLastMove(false);   
         bWhiteMove = !bWhiteMove;
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
@@ -248,7 +251,7 @@ Move Board::findMove(const Move& move) const {
         throw std::invalid_argument("move");
     return *res;
 }
-void Board::makeMove(const Move& move) {
+void Board::makeMove(const Move& move, const bool bGenerate) {
     std::vector<int> capturedPawns; 
     board[move.getStartPos()] = 0;
     if(move.getMoveType() == MoveType::JUMP) {
@@ -268,8 +271,10 @@ void Board::makeMove(const Move& move) {
     Diagonals::setBoard(board);
     const MoveHistory history = {move, capturedPawns};
     moves.push_back(history);
+    if(bGenerate)
+        generateMoves();
 }
-void Board::unmakeLastMove() {
+void Board::unmakeLastMove(bool bGenerate) {
     const MoveHistory lastMove = moves.at(moves.size()-1);
     moves.erase(moves.end()-1);
     for(int i = 0 ; i < lastMove.capturedPawns.size(); i++) {
@@ -280,6 +285,8 @@ void Board::unmakeLastMove() {
     bWhiteMove = !bWhiteMove;
     Diagonals::changeMove();
     Diagonals::setBoard(board);
+    if(bGenerate)
+        generateMoves();
 }
 
 std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const {
@@ -386,5 +393,5 @@ std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQu
     return diagonals;
 }
 bool Board::isLost() const {
-    return moves.empty();
+    return possibleMoves.empty();
 }

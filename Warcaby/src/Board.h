@@ -9,17 +9,21 @@ public:
     explicit Board(bool);
     ~Board() {delete [] board;}
     
-    void generateMoves();
     void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start,
                             int& stop) const;
     std::vector<Move> findQueenJumps(int pos, int pawnType);
-    void makeMove(const Move& move);
-    void unmakeLastMove();
+    void makeMove(const Move& move, bool bGenerate);
+    void unmakeLastMove(bool bGenerate);
     bool isWhiteMove() const { return bWhiteMove; }
     bool isLost() const;
     Move findMove(const Move& move) const;
     std::vector<Move> getPossibleMoves() const { return possibleMoves; }
     int* getBoard() const { return board; }
+    Move getLastMove() const {
+        if(moves.empty())
+            return *new Move(-1, -1, 0, MoveType::NONE, MoveDirection::NONE, {});
+        return moves.back().move;
+    }
 
 private:
     struct MoveHistory {
@@ -27,6 +31,7 @@ private:
         std::vector<int> capturedPawns;
     };
     
+    void generateMoves();
     int* board = new int[32];
     std::vector<MoveHistory> moves;
     std::vector<Move> possibleMoves;

@@ -1,31 +1,48 @@
 #include "Printer.h"
 
+#include <cstdalign>
 #include <iostream>
+#include <sstream>
+#include <windows.h>
 
+#include "Board.h"
+#include "Engine.h"
 #include "Move.h"
     std::string Printer::whitePawn = "\xE2\x9B\x82";
     std::string Printer::whiteQueen = "\xE2\x9B\x83";
     std::string Printer::blackPawn = "\xE2\x9B\x80";
     std::string Printer::blackQueen = "\xE2\x9B\x81";
-void Printer::printEvenRow(int& i, int board[32]) {
+    Board* Printer::board = nullptr;
+void Printer::printEvenRow(int& i) {
     std::cout << 8-(i+1)/4 << " ";
     for(int j = 0; j < 4; j++) {
         std::cout << "| ";
-        switch (board[++i]) {
+        if(board->getLastMove().getEndPos() == ++i)
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+        switch (board->getBoard()[i]) {
         case 0:
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
             std::cout << "  |   ";
             break;
         case 1:
-            std::cout << whitePawn << " |   ";
+            std::cout << whitePawn;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case 2:
-            std::cout << whiteQueen << " |   ";
+            std::cout << whiteQueen;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case -1:
-            std::cout << blackPawn << " |   ";
+            std::cout << blackPawn;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case -2:
-            std::cout << blackQueen << " |   ";
+            std::cout << blackQueen;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         default:
             throw std::invalid_argument("board[" + std::to_string(i) + "]");
@@ -34,25 +51,36 @@ void Printer::printEvenRow(int& i, int board[32]) {
     std::cout << "|";
 }
 
-void Printer::printOddRow(int& i, int board[32]) {
+void Printer::printOddRow(int& i) {
     std::cout << 8-(i+1)/4 << " |   ";
     for(int j = 0; j < 4; j++) {
         std::cout << "| ";
-        switch (board[++i]) {
+        if(board->getLastMove().getEndPos() == ++i)
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+        switch (board->getBoard()[i]) {
         case 0:
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
             std::cout << "  |   ";
             break;
         case 1:
-            std::cout << whitePawn << " |   ";
+            std::cout << whitePawn;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case 2:
-            std::cout << whiteQueen << " |   ";
+            std::cout << whiteQueen;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case -1:
-            std::cout << blackPawn << " |   ";
+            std::cout << blackPawn;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         case -2:
-            std::cout << blackQueen << " |   ";
+            std::cout << blackQueen;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            std::cout << " |   ";
             break;
         default:
             throw std::invalid_argument("board[" + std::to_string(i) + "]");
@@ -60,17 +88,18 @@ void Printer::printOddRow(int& i, int board[32]) {
     }
 }
 
-void Printer::printBoard(int board[32]) {
+void Printer::printBoard() {
     const std::string lineSeparator = "  +---+---+---+---+---+---+---+---+";
     std::cout << lineSeparator << std::endl;
     for(int i = -1; i < 28;) {
         if((8-(i+1)/4) % 2 == 1)
-            printEvenRow(i, board);
+            printEvenRow(i);
         else
-            printOddRow(i, board);
+            printOddRow(i);
         std::cout << std::endl << lineSeparator << std::endl;
     }
     std::cout << "    a   b   c   d   e   f   g   h" << std::endl;
+    std::cout << Engine::evaluate(*board) << std::endl;
 }
 
 void Printer::printPossibleMoves(const std::vector<Move>& possibleMoves) {
@@ -80,6 +109,18 @@ void Printer::printPossibleMoves(const std::vector<Move>& possibleMoves) {
             if(move.getStartPos() != possibleMoves.at(i-1).getStartPos())
                 std::cout << std::endl;
         }
-        printf("%d - %d; ", move.getStartPos()+1, move.getEndPos()+1);
+        std::stringstream ss;
+        int start = move.getStartPos()*2;
+        int end = move.getEndPos()*2;
+        int startRow = 8-start/8;
+        int endRow = 8-end/8;
+        if(startRow % 2 == 0)
+            start++;
+        if(endRow % 2 == 0)
+            end++;
+        char startColumn = 'a' + (start % 8);
+        char endColumn = 'a' + (end % 8);
+        ss << startColumn << startRow << "-" << endColumn << endRow << "; ";
+        std::cout << ss.str();
     }
 }
