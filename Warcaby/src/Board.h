@@ -1,8 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
-
 #include "Move.h"
+
+struct MoveHistory {
+    Move move;
+    std::vector<int> capturedPawns;
+};
 
 class Board {
 public:
@@ -20,20 +24,15 @@ public:
     std::vector<Move> getPossibleMoves() const { return possibleMoves; }
     int* getBoard() const { return board; }
     Move getLastMove() const {
-        if(moves.empty())
+        if(moveHistory.empty())
             return *new Move(-1, -1, 0, MoveType::NONE, MoveDirection::NONE, {});
-        return moves.back().move;
+        return moveHistory.back().move;
     }
-
+    std::vector<MoveHistory> getMoveHistory() const { return moveHistory; }
 private:
-    struct MoveHistory {
-        Move move;
-        std::vector<int> capturedPawns;
-    };
-    
     void generateMoves();
     int* board = new int[32];
-    std::vector<MoveHistory> moves;
+    std::vector<MoveHistory> moveHistory;
     std::vector<Move> possibleMoves;
     bool bWhiteMove = true;
     std::vector<Move> findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const;

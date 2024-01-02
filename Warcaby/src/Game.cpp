@@ -4,51 +4,40 @@
 
 #include "Engine.h"
 #include "Printer.h"
+enum {
+    DEPTH = 6
+};
 
 Game::Game(const bool bUnicode) {
-    int depth = 5;
     char choice = '\0';
     do {
         board = new Board(bUnicode);
-        std::cout << "Czy gra ma sie toczyc pomiedzy 2 silnikami (t/n)?\n";
-        do {
-            std::cin >> choice;
-        } while(choice != 't' && choice != 'n');
     
-        Printer::printBoard();
-        if(choice == 'n'){
-            Printer::printPossibleMoves(board->getPossibleMoves());
-        }
-        bool bContinue = true;
-        while(bContinue) {
+        Printer::printBoard(board);
+        Printer::printPossibleMoves(board->getPossibleMoves());
+        while(true) {
             std::string move;
-            if(choice == 'n'){
-                std::cout << "\nWprowadz ruch: ";
-                std::cin >> move;
-                try {
-                    board->makeMove(board->findMove(Move::parseMove(move, board->isWhiteMove())), true);
-                } catch(std::invalid_argument& e) {
-                    std::cout << "Ruch nie jest legalny, Podaj inny ruch\n";
-                    continue;
-                }
+            std::cout << "\nWprowadz ruch: ";
+            std::cin >> move;
+            try {
+                board->makeMove(board->findMove(Move::parseMove(move, board->isWhiteMove())), true);
+            } catch(std::invalid_argument& e) {
+                std::cout << "Ruch nie jest legalny, Podaj inny ruch\n";
+                continue;
             }
-            else {
-                board->makeMove(Engine::bestMove(*board, 3), true);
-            }
-            Printer::printBoard();
+            Printer::printBoard(board);
+            std::cout << std::endl;
             if(board->isLost())
                 break;
-            board->makeMove(Engine::bestMove(*board, 3), true);
+            board->makeMove(Engine::bestMove(*board, DEPTH), true);
             if(board->isLost())
                 break;
-            Printer::printBoard();
-            if(choice == 'n'){
-                Printer::printPossibleMoves(board->getPossibleMoves());
-            }
+            Printer::printBoard(board);
+            Printer::printPossibleMoves(board->getPossibleMoves());
        
         }
         std::cout << "Koniec gry\n";
-        std::cout << "Wygrywają: " << (board->isWhiteMove() ? "czarne" : "biale") << std::endl;
+        std::cout << "Wygrywaja: " << (board->isWhiteMove() ? "czarne" : "biale") << std::endl;
         delete board;
         std::cout << "Czy chcesz zaczac kolejna gre? (t/n)\n";
         choice = '\0';

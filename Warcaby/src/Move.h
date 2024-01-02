@@ -1,5 +1,6 @@
 #pragma once
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,7 @@ enum class MoveDirection
 {
     LEFT, RIGHT, JUMP, NONE
 };
+
 class Move
 {
 private:
@@ -47,6 +49,18 @@ public:
             && lhs.endPos == rhs.endPos;
     }
     friend std::ostream& operator<<(std::ostream& os, const Move& obj) {
-        return os << obj.startPos << "-" << obj.endPos;
+        std::stringstream ss;
+        int start = obj.getStartPos()*2;
+        int end = obj.getEndPos()*2;
+        const int startRow = 8-start/8;
+        const int endRow = 8-end/8;
+        if(startRow % 2 == 0)
+            start++;
+        if(endRow % 2 == 0)
+            end++;
+        const char startColumn = 'a' + (start % 8);
+        const char endColumn = 'a' + (end % 8);
+        ss << startColumn << startRow << "-" << endColumn << endRow << "; ";
+        return os << ss.str();
     }
 };

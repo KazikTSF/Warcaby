@@ -3,15 +3,13 @@
 #include <algorithm>
 #include <iostream>
 
+#include "Printer.h"
+
 int Engine::evaluate(const Board& board) {
     int eval = 0;
     for(int i = 0; i < 32; i++) {
         if(board.getBoard()[i] != 0) {
-            int valueModifier;
-            if(board.isWhiteMove())
-                valueModifier = board.getBoard()[i] > 0 ? 1 : -1;
-            else
-                valueModifier = board.getBoard()[i] > 0 ? -1 : 1;
+            const int valueModifier = board.getBoard()[i] > 0 ? -1 : 1;
             switch (board.getBoard()[i]) {
             case 1:
             case -1:
@@ -31,47 +29,55 @@ int Engine::evaluate(const Board& board) {
         }
     }
     return eval;
-    
 }
-int Engine::mini(Board& board, const int depth) {
-    if(depth == 0) return evaluate(board);
-    int mini = INT_MAX;
+int Engine::mini(Board& board, int& alpha, int& beta, const int depth) {
+    if(depth == 0)
+        return evaluate(board);
+    if(board.isLost())
+        return board.isWhiteMove() ? INT_MIN : INT_MAX;
+    int score = INT_MAX;
     for(Move& move : board.getPossibleMoves()) {
         board.makeMove(move, true);
-        mini = std::min(mini, maxi(board, depth-1));
+        score = std::min(score, maxi(board, alpha, beta, depth-1));
         board.unmakeLastMove(true);
+        if(score <= alpha)
+            return alpha;
+        if(score < beta)
+            beta = score;
     }
-    return mini;
+    return score;
 }
-int Engine::maxi(Board& board, const int depth) {
-    if(depth == 0) return evaluate(board);
-    int maxi = INT_MIN;
+int Engine::maxi(Board& board, int& alpha, int& beta, const int depth) {
+    if(depth == 0)
+        return evaluate(board);
+    if(board.isLost())
+        return board.isWhiteMove() ? INT_MIN : INT_MAX;
+    int score = INT_MIN;
     for(Move& move : board.getPossibleMoves()) {
         board.makeMove(move, true);
-        maxi = std::max(maxi, mini(board, depth-1));
+        score = std::max(score, mini(board, alpha, beta, depth-1));
         board.unmakeLastMove(true);
+        if(score >= beta)
+            return beta;
+        if(score > alpha)
+            alpha = score;
     }
-    return maxi;
+    return score;
 }
 Move Engine::bestMove(Board& board, const int depth) {
-    if(board.isLost()){
-        auto temp =  Move(-1, -1, 0, MoveType::NONE, MoveDirection::NONE, {});
-        temp.eval = board.isWhiteMove() ? INT_MIN : INT_MAX;
-        return temp;
-    }
     std::vector<Move> possibleMoves = board.getPossibleMoves();
+    int mEvalIndex = 0, mEval = INT_MIN;
+    int i = 0;
     for(Move& move : possibleMoves) {
+        int alpha = INT_MIN, beta = INT_MAX;
         board.makeMove(move, true);
-        move.eval = mini(board, depth);
+        const int eval = mini(board, alpha, beta, depth-1);
         board.unmakeLastMove(true);
+        if(eval > mEval) {
+            mEval = eval;
+            mEvalIndex = i;
+        }
+        i++;
     }
-    //TODO debugging
-    for(const auto& move : possibleMoves) {
-        std::cout << move << " eval: " << -move.eval << std::endl;
-    }
-    std::sort( possibleMoves.begin( ), possibleMoves.end( ), [ ]( const Move& lhs, const Move& rhs )
-{
-   return lhs.eval < rhs.eval;
-});
-    return possibleMoves[0];
+    return possibleMoves[mEvalIndex];
 }

@@ -6,6 +6,7 @@
 #include <windows.h>
 
 #include "Diagonals.h"
+#include "Engine.h"
 
 
 Board::Board(const bool bUnicode) {
@@ -15,7 +16,6 @@ Board::Board(const bool bUnicode) {
         Printer::blackPawn = 'b';
         Printer::blackQueen = 'B';
     }
-    Printer::init(this);
     
     for(int i = 0; i < 12; i++)
         board[i] = -1;
@@ -270,13 +270,13 @@ void Board::makeMove(const Move& move, const bool bGenerate) {
     Diagonals::changeMove();
     Diagonals::setBoard(board);
     const MoveHistory history = {move, capturedPawns};
-    moves.push_back(history);
+    moveHistory.push_back(history);
     if(bGenerate)
         generateMoves();
 }
 void Board::unmakeLastMove(bool bGenerate) {
-    const MoveHistory lastMove = moves.at(moves.size()-1);
-    moves.erase(moves.end()-1);
+    const MoveHistory lastMove = moveHistory.at(moveHistory.size()-1);
+    moveHistory.erase(moveHistory.end()-1);
     for(int i = 0 ; i < lastMove.capturedPawns.size(); i++) {
         board[lastMove.move.getCapturedPositions().at(i)] = lastMove.capturedPawns.at(i);
     }
