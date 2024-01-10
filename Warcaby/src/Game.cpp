@@ -5,7 +5,7 @@
 #include "Engine.h"
 #include "Printer.h"
 enum {
-    DEPTH = 6
+    depth = 7
 };
 
 Game::Game(const bool bUnicode) {
@@ -21,7 +21,7 @@ Game::Game(const bool bUnicode) {
             std::cin >> move;
             try {
                 board->makeMove(board->findMove(Move::parseMove(move, board->isWhiteMove())), true);
-            } catch(std::invalid_argument& e) {
+            } catch(std::invalid_argument&) {
                 std::cout << "Ruch nie jest legalny, Podaj inny ruch\n";
                 continue;
             }
@@ -29,13 +29,14 @@ Game::Game(const bool bUnicode) {
             std::cout << std::endl;
             if(board->isLost())
                 break;
-            board->makeMove(Engine::bestMove(*board, DEPTH), true);
+            board->makeMove(Engine::bestMove(*board, depth), true);
             if(board->isLost())
                 break;
             Printer::printBoard(board);
             Printer::printPossibleMoves(board->getPossibleMoves());
        
         }
+        Printer::printBoard(board);
         std::cout << "Koniec gry\n";
         std::cout << "Wygrywaja: " << (board->isWhiteMove() ? "czarne" : "biale") << std::endl;
         delete board;
