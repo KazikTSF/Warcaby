@@ -276,8 +276,8 @@ void Board::makeMove(const Move& move, const bool bGenerate) {
     if(bGenerate)
         generateMoves();
 }
-void Board::unmakeLastMove(const bool bGenerate) {
-    //bGenerate pokazuje, czy nalezy generowac ruchy po wyykonaniu ruchu, poniewaz w przypadku generowania ich niw powinno sie to dziac
+void Board::unmakeLastMove(const bool bGenerate) { //bGenerate pokazuje, czy nalezy generowac ruchy po wyykonaniu ruchu,
+    //poniewaz w przypadku generowania ich nie powinno sie to dziac
     const MoveHistory lastMove = moveHistory.at(moveHistory.size()-1);
     moveHistory.erase(moveHistory.end()-1);
     for(int i = 0 ; i < lastMove.capturedPawns.size(); i++) {

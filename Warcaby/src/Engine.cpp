@@ -33,7 +33,7 @@ int Engine::evaluate(const Board& board) {
     }
     return eval;
 }
-int Engine::mini(Board& board, int& alpha, int& beta, const int depth) {
+int Engine::mini(Board& board, int& alpha, int& beta, const int depth) { //ocena posuniecia dla silnika
     if(board.isLost())
         return board.isWhiteMove() ? INT_MAX : INT_MIN;
     if(depth == 0)
@@ -50,7 +50,7 @@ int Engine::mini(Board& board, int& alpha, int& beta, const int depth) {
     }
     return score;
 }
-int Engine::maxi(Board& board, int& alpha, int& beta, const int depth) {
+int Engine::maxi(Board& board, int& alpha, int& beta, const int depth) { //ocena posuniecia dla gracza
     if(board.isLost())
         return board.isWhiteMove() ? INT_MAX : INT_MIN;
     if(depth == 0)
