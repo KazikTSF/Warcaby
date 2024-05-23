@@ -394,6 +394,3 @@ std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQu
     }
     return diagonals;
 }
-bool Board::isLost() const {
-    return possibleMoves.empty();
-}
