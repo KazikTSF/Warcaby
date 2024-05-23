@@ -2,6 +2,7 @@
 
 #include <algorithm>
 int Diagonals::board[32] = {};
+
 bool Diagonals::bWhiteMove = true;
 void Diagonals::setBoard(int boardInit[32]) {
     std::copy_n(boardInit, 32, board);
@@ -128,7 +129,7 @@ void Diagonals::findInDirection(std::vector<Move>& diagonalsInDirection, const M
         }
     }
 }
-std::vector<Move> Diagonals::possibleDiagonalsBoth(int pos, int pawnType) {
+std::vector<Move> Diagonals::possibleDiagonalsBoth(const int pos, const int pawnType) {
     std::vector<Move> temp1 = Diagonals::possibleDiagonals(pos, pawnType, false);
     std::vector<Move> temp2 = Diagonals::possibleDiagonals(pos, pawnType, true);
     temp1.insert(temp1.end(), temp2.begin(), temp2.end());

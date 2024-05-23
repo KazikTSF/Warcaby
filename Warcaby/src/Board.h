@@ -15,12 +15,15 @@ public:
     
     void checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start,
                             int& stop) const;
-    std::vector<Move> findQueenJumps(int pos, int pawnType);
+    
+    
     void makeMove(const Move& move, bool bGenerate);
     void unmakeLastMove(bool bGenerate);
-    bool isWhiteMove() const { return bWhiteMove; }
-    bool isLost() const;
+    
     Move findMove(const Move& move) const;
+    
+    bool isWhiteMove() const { return bWhiteMove; }
+    bool isLost() const { return possibleMoves.empty(); }
     std::vector<Move> getPossibleMoves() const { return possibleMoves; }
     int* getBoard() const { return board; }
     Move getLastMove() const {
@@ -30,11 +33,13 @@ public:
     }
     std::vector<MoveHistory> getMoveHistory() const { return moveHistory; }
 private:
-    void generateMoves();
     int* board = new int[32];
+    bool bWhiteMove = true;
     std::vector<MoveHistory> moveHistory;
     std::vector<Move> possibleMoves;
-    bool bWhiteMove = true;
+    
+    void generateMoves();
+    std::vector<Move> findQueenJumps(int pos, int pawnType);
     std::vector<Move> findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const;
     std::vector<Move> findPawnJumps(int pos, int pawnType);
     static std::vector<Move> findLongestJumps(const std::vector<Move>& jumps);

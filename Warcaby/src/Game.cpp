@@ -5,7 +5,7 @@
 #include "Engine.h"
 #include "Printer.h"
 enum {
-    DEPTH = 6
+    depth = 7
 };
 
 Game::Game(const bool bUnicode) {
@@ -29,13 +29,14 @@ Game::Game(const bool bUnicode) {
             std::cout << std::endl;
             if(board->isLost())
                 break;
-            board->makeMove(Engine::bestMove(*board, DEPTH), true);
+            board->makeMove(Engine::bestMove(*board, depth), true);
             if(board->isLost())
                 break;
             Printer::printBoard(board);
             Printer::printPossibleMoves(board->getPossibleMoves());
        
         }
+        Printer::printBoard(board);
         std::cout << "Koniec gry\n";
         std::cout << "Wygrywaja: " << (board->isWhiteMove() ? "czarne" : "biale") << std::endl;
         delete board;
