@@ -3,8 +3,8 @@
 
 class Engine {
 private:
-    const static int pawnValue = 5;
-    const static int queenValue = 15;
+    static constexpr int PAWN_VALUE = 5;
+    static constexpr int QUEEN_VALUE = 15;
 public:
     static int evaluate(const Board& board);
     static int mini(Board& board, int& alpha, int& beta, const int depth);

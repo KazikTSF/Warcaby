@@ -13,11 +13,11 @@ int Engine::evaluate(const Board& board) {
             switch (board.getBoard()[i]) {
             case 1:
             case -1:
-                eval+=pawnValue*valueModifier;
+                eval+=PAWN_VALUE*valueModifier;
                 break;
             case 2:
             case -2:
-                eval+=queenValue*valueModifier;
+                eval+=QUEEN_VALUE*valueModifier;
                 break;
             default:
                 break;

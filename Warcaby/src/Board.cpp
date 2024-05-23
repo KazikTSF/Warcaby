@@ -6,7 +6,6 @@
 #include <windows.h>
 
 #include "Diagonals.h"
-#include "Engine.h"
 
 
 Board::Board(const bool bUnicode) {
@@ -76,7 +75,7 @@ void Board::generateMoves() {
     }
 }
 
-void Board::checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, int start, int& stop) const {
+void Board::checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int& startRight, const int start, int& stop) const {
     bool endDiagonalCapture = false;
     bool endDiagonalFriendly = false;
     int capturedPosInOneDiagonal = -1;
@@ -129,14 +128,13 @@ void Board::checkQueenDiagonal(std::vector<Move>& jumps, int& startReversed, int
     }
     if(capturedPosInOneDiagonal > 0) {
         for(int i = start; i < stop; i++) {
-            jumps.at(i) = *new Move (jumps.at(i).getStartPos(), jumps.at(i).getEndPos(), jumps.at(i).getPawnType(), MoveType::JUMP, jumps.at(i).getMoveDirection());
+            jumps.at(i) = Move(jumps.at(i).getStartPos(), jumps.at(i).getEndPos(), jumps.at(i).getPawnType(), MoveType::JUMP, jumps.at(i).getMoveDirection());
             jumps.at(i).addCaptured(capturedPosInOneDiagonal);
         }
-            
     }
 }
 
-std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
+std::vector<Move> Board::findQueenJumps(const int pos, const int pawnType) {
     std::vector<Move> jumps = Diagonals::possibleDiagonalsBoth(pos, pawnType);
     int startReversed = Diagonals::queenDiagonal(jumps), startRight = -1;
     for(int i = 0; i < startReversed; i++) {
@@ -180,11 +178,11 @@ std::vector<Move> Board::findQueenJumps(int pos, int pawnType) {
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
     for(Move& move : jumps) {
-        move = *new Move(pos, move.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, move.getCapturedPositions());
+        move = Move(pos, move.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, move.getCapturedPositions());
     }
     return jumps;
 }
-std::vector<Move> Board::findPawnJumps(int pos, int pawnType) {
+std::vector<Move> Board::findPawnJumps(const int pos, int pawnType) {
     std::vector<Move> jumps;
     const std::vector<Move> diagonals = Diagonals::possibleDiagonalsBoth(pos, pawnType);
     for(const Move& m : diagonals) {
@@ -226,7 +224,7 @@ std::vector<Move> Board::findPawnJumps(int pos, int pawnType) {
     }
     jumps.insert(jumps.end(), temp.begin(), temp.end());
     for(Move& move : jumps) {
-        move = *new Move(pos, move.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, move.getCapturedPositions());
+        move = Move(pos, move.getEndPos(), pawnType, MoveType::JUMP, MoveDirection::JUMP, move.getCapturedPositions());
     }
     return jumps;
 }
@@ -274,7 +272,7 @@ void Board::makeMove(const Move& move, const bool bGenerate) {
     if(bGenerate)
         generateMoves();
 }
-void Board::unmakeLastMove(bool bGenerate) {
+void Board::unmakeLastMove(const bool bGenerate) {
     const MoveHistory lastMove = moveHistory.at(moveHistory.size()-1);
     moveHistory.erase(moveHistory.end()-1);
     for(int i = 0 ; i < lastMove.capturedPawns.size(); i++) {
@@ -289,7 +287,7 @@ void Board::unmakeLastMove(bool bGenerate) {
         generateMoves();
 }
 
-std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, bool bIsQueen) const {
+std::vector<Move> Board::findNormalMoves(std::vector<Move> diagonals, const bool bIsQueen) const {
     if(bIsQueen) {
         int firstReversed = Diagonals::queenDiagonal(diagonals);
         bool bEndQueenMoveLeft = false, bEndQueenMoveRight = false;

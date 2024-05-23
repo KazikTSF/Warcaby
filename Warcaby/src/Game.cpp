@@ -21,7 +21,7 @@ Game::Game(const bool bUnicode) {
             std::cin >> move;
             try {
                 board->makeMove(board->findMove(Move::parseMove(move, board->isWhiteMove())), true);
-            } catch(std::invalid_argument& e) {
+            } catch(std::invalid_argument&) {
                 std::cout << "Ruch nie jest legalny, Podaj inny ruch\n";
                 continue;
             }

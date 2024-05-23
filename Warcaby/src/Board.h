@@ -25,7 +25,7 @@ public:
     int* getBoard() const { return board; }
     Move getLastMove() const {
         if(moveHistory.empty())
-            return *new Move(-1, -1, 0, MoveType::NONE, MoveDirection::NONE, {});
+            return {-1, -1, 0, MoveType::NONE, MoveDirection::NONE, {}};
         return moveHistory.back().move;
     }
     std::vector<MoveHistory> getMoveHistory() const { return moveHistory; }
